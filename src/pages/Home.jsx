@@ -4,7 +4,7 @@ import FeedbackModal from "../components/FeedbackModal";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaLock, FaClipboardList, FaBolt, FaUniversity, FaEnvelope } from "react-icons/fa";
-import HeroImg from "../images/image.png"; // Make sure this file exists
+ // Make sure this file exists
 
 export default function Home() {
   const [showFeedback, setShowFeedback] = useState(false);
@@ -41,12 +41,12 @@ export default function Home() {
 
           {/* Image Column */}
           <div className="hero-image">
-            <img 
-              src={HeroImg} 
-              alt="Illustration showing equipment request management" 
-              loading="lazy"
-            />
-          </div>
+  <img 
+    src="/images/image.png" 
+    alt="Illustration showing equipment request management" 
+    loading="lazy"
+  />
+</div>
         </div>
       </section>
 
