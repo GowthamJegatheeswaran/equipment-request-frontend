@@ -35,7 +35,6 @@ export default function StudentDashboard() {
   const counts = useMemo(() => {
     const pending = rows.filter((r) => String(r.status) === "PENDING_LECTURER_APPROVAL").length
     const rejected = rows.filter((r) => String(r.status) === "REJECTED_BY_LECTURER").length
-    // Approved = everything else (includes TO flow + return flow)
     const approved = rows.length - pending - rejected
     return { pending, approved, rejected, total: rows.length }
   }, [rows])
@@ -69,17 +68,13 @@ export default function StudentDashboard() {
             </button>
           </div>
 
-          {error && (
-            <div className="error-message" style={{ color: "red", marginTop: 10 }}>
-              {error}
-            </div>
-          )}
+          {error && <div className="error-message">{error}</div>}
 
           <div className="summary-grid" style={{ marginTop: 12 }}>
-            <SummaryCard title="Pending" value={counts.pending} />
-            <SummaryCard title="Approved" value={counts.approved} />
-            <SummaryCard title="Rejected" value={counts.rejected} />
-            <SummaryCard title="Total Requests" value={counts.total} />
+            <SummaryCard title="Pending" value={counts.pending} color="yellow" />
+            <SummaryCard title="Approved" value={counts.approved} color="green" />
+            <SummaryCard title="Rejected" value={counts.rejected} color="red" />
+            <SummaryCard title="Total Requests" value={counts.total} color="blue" />
           </div>
 
           <h3>Quick Actions</h3>
@@ -89,39 +84,21 @@ export default function StudentDashboard() {
           </div>
 
           <h3>Recent Requests</h3>
-          <table className="requests-table">
-            <thead>
-              <tr>
-                <th>Equipment</th>
-                <th>Quantity</th>
-                <th>From</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recent.map((r) => {
-                const p = itemsPreview(r)
-                return (
-                  <tr key={r.requestId}>
-                    <td>{p.text}</td>
-                    <td style={{ textAlign: "center" }}>{p.qty}</td>
-                    <td style={{ textAlign: "center" }}>{r.fromDate || "-"}</td>
-                    <td style={{ textAlign: "center" }}>
-                      <span className={`status ${String(r.status || "").toLowerCase()}`}>{r.status || "-"}</span>
-                    </td>
-                  </tr>
-                )
-              })}
-
-              {recent.length === 0 && !loading && (
-                <tr>
-                  <td colSpan="4" style={{ textAlign: "center" }}>
-                    No requests submitted yet
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+          <div className="recent-cards">
+            {recent.length === 0 && !loading && <p>No requests submitted yet</p>}
+            {recent.map((r) => {
+              const p = itemsPreview(r)
+              const statusClass = String(r.status || "").toLowerCase()
+              return (
+                <div key={r.requestId} className="recent-card">
+                  <div className="recent-card-row"><strong>Equipment:</strong> {p.text}</div>
+                  <div className="recent-card-row"><strong>Quantity:</strong> {p.qty}</div>
+                  <div className="recent-card-row"><strong>From:</strong> {r.fromDate || "-"}</div>
+                  <div className={`status ${statusClass}`}>{r.status || "-"}</div>
+                </div>
+              )
+            })}
+          </div>
         </div>
 
         <footer>
