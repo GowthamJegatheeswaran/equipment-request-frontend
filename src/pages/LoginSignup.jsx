@@ -34,6 +34,7 @@ export default function LoginSignup() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoginError("");
+
     if (!loginEmail || !loginPassword) return setLoginError("Please fill all fields");
 
     try {
@@ -47,6 +48,7 @@ export default function LoginSignup() {
   const handleSignup = async (e) => {
     e.preventDefault();
     setSignupError("");
+
     if (!fullName || !regNo || !department || !email || !password || !confirm) {
       setSignupError("Please fill all fields");
       return;
@@ -70,7 +72,7 @@ export default function LoginSignup() {
 
   return (
     <div className="login-bg">
-      <div className={`sliding-container`}>
+      <div className="sliding-container">
         {/* LEFT PANEL */}
         <div className={`login-left ${showSignup ? "slide-left" : ""}`}>
           {!showSignup ? (
@@ -92,6 +94,7 @@ export default function LoginSignup() {
             <form className="login-box" onSubmit={handleLogin}>
               <h2>Login</h2>
               <p>Access your account</p>
+
               {loginError && <p className="error">{loginError}</p>}
 
               <label>Email</label>
@@ -133,14 +136,11 @@ export default function LoginSignup() {
             <form className="signup-box" onSubmit={handleSignup}>
               <h2>Create Account</h2>
               <p>Student registration</p>
+
               {signupError && <p className="error">{signupError}</p>}
 
               <label>Full Name</label>
-              <input
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required
-              />
+              <input value={fullName} onChange={(e) => setFullName(e.target.value)} required />
 
               <label>Registration Number</label>
               <input

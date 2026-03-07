@@ -3,26 +3,26 @@ import { RequestProvider } from "./context/RequestContext";
 
 // Pages
 import Home from "./pages/Home";
-import LoginSignup from "./pages/LoginSignup"; // Combined login + signup component
+import LoginSignup from "./pages/LoginSignup";
 import ResetPassword from "./pages/ResetPassword";
 
-// STUDENT
+// Student
 import StudentDashboard from "./pages/StudentDashboard";
 import NewRequest from "./pages/NewRequest";
 import ViewRequests from "./pages/ViewRequests";
 import History from "./pages/History";
 
-// INSTRUCTOR
+// Instructor
 import InstructorDashboard from "./pages/InstructorDashboard";
 
-// LECTURER
+// Lecturer
 import LecturerDashboard from "./pages/LecturerDashboard";
 import LecturerApplications from "./pages/LecturerApplications";
 import LecturerNewRequest from "./pages/LecturerNewRequest";
 import LecturerViewRequests from "./pages/LecturerViewRequests";
 import LecturerHistory from "./pages/LecturerHistory";
 
-// TECHNICAL OFFICER (TO)
+// TO
 import TODashboard from "./pages/TODashboard";
 import TOApprovalRequests from "./pages/TOApprovalRequests";
 import TOPurchase from "./pages/TOPurchase";
@@ -40,7 +40,7 @@ import HodDeptPurchase from "./pages/HodDeptPurchase";
 import HodInspect from "./pages/HodInspect";
 import HodHistory from "./pages/HodHistory";
 
-// ADMIN
+// Admin
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminDepartment from "./pages/AdminDepartment";
 import AdminViewRequests from "./pages/AdminViewRequests";
@@ -48,7 +48,7 @@ import AdminUsers from "./pages/AdminUsers";
 import AdminReport from "./pages/AdminReport";
 import AdminHistory from "./pages/AdminHistory";
 
-// COMMON
+// Common
 import Help from "./pages/Help";
 import Settings from "./pages/Settings";
 
