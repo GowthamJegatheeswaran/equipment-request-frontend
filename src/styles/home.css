@@ -84,7 +84,7 @@ body {
   justify-content: center;
   align-items: center;
   padding: 80px 100px;
-  background: #f8fafc; /* soft professional background */
+  background: #fbfbfb; /* soft professional background */
 }
 
 .hero-content {
@@ -128,14 +128,16 @@ body {
 }
 
 .hero-image img {
-  max-width: 500px;
+  max-width: 600px;
   width: 100%;
   border-radius: 16px; /* slightly larger radius for professional look */
   object-fit: cover;
+  background-color: transparent; /* removes visible white background */
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1); /* subtle shadow for depth */
 }
 
 .hero-image img:hover {
-  transform: scale(1.03);
+  transform: scale(1.05);
   transition: transform 0.4s ease;
 }
 
