@@ -102,6 +102,16 @@ export default function Home() {
         </address>
       </section>
 
+      {/* About Section */}
+<section className="about" id="about">
+  <h2>About</h2>
+  <p>
+    The Equipment Request Management System is designed to help students and faculty 
+    efficiently request, track, and manage laboratory equipment. Our goal is to 
+    streamline lab management and ensure smooth operations for all departments.
+  </p>
+</section>
+
       {/* Footer */}
       <footer className="footer">
         <p>© 2026 ERS</p>
