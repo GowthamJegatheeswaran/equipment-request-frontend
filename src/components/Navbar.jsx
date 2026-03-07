@@ -1,21 +1,25 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import "../styles/home.css";
-import logo from "../images/logo.png"; // Make sure logo is in src/images/
 
 export default function Navbar({ onFeedback }) {
   const [open, setOpen] = useState(false);
 
   const handleFeedback = () => {
-    setOpen(false);
-    onFeedback();
+    setOpen(false); // close mobile menu
+    onFeedback();   // open feedback modal
   };
 
   return (
     <nav className="navbar" role="navigation">
       {/* Logo */}
       <div className="logo-container">
-        <img src={logo} alt="Equipment Request System Logo" className="logo-img" />
+        {/* Use public folder path */}
+        <img
+          src="/images/logo.png"
+          alt="Equipment Request System Logo"
+          className="logo-img"
+        />
         <span className="logo-text">Equipment Request Management System</span>
       </div>
 
@@ -34,7 +38,11 @@ export default function Navbar({ onFeedback }) {
       </Link>
 
       {/* Mobile Menu Toggle */}
-      <div className="menu-toggle" onClick={() => setOpen(!open)} aria-label="Toggle navigation menu">
+      <div
+        className="menu-toggle"
+        onClick={() => setOpen(!open)}
+        aria-label="Toggle navigation menu"
+      >
         ☰
       </div>
     </nav>
