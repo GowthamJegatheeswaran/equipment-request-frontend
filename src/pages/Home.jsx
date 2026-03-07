@@ -4,7 +4,7 @@ import FeedbackModal from "../components/FeedbackModal";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaLock, FaClipboardList, FaBolt, FaUniversity, FaEnvelope } from "react-icons/fa";
-import HeroImg from "../images/image.png";
+import HeroImg from "../images/image.png"; // Make sure this file exists
 
 export default function Home() {
   const [showFeedback, setShowFeedback] = useState(false);
@@ -29,8 +29,8 @@ export default function Home() {
               </p>
             </div>
             <div className="hero-button-container">
-              <button 
-                className="cta-btn" 
+              <button
+                className="cta-btn"
                 onClick={() => navigate("/login")}
                 aria-label="Go to login page"
               >
