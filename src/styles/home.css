@@ -194,6 +194,14 @@ body {
   box-shadow: 0 6px 18px rgba(37, 99, 235, 0.6);
 }
 
+.hero-text-block {
+  margin-bottom: 40px; /* space between text block and button */
+}
+
+.hero-button-container {
+  display: inline-block; /* keeps button natural width */
+}
+
 /* =======================================
    FEATURES SECTION
 ======================================= */

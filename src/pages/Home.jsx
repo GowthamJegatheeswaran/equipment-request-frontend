@@ -18,13 +18,25 @@ export default function Home() {
       <section className="hero">
   <div className="hero-content fade-in">
     <div className="hero-text">
-      <h1>EQUIPMENT REQUEST MANAGEMENT SYSTEM</h1>
-      <p className="hero-subtitle">Request, track, and manage laboratory equipment easily.</p>
-      <button className="cta-btn" onClick={() => navigate("/login")} aria-label="Get Started">
-        Get Started
-      </button>
-      <p className="hero-tagline">Simplifying laboratory management for students & faculty</p>
-    </div>
+  <h1>EQUIPMENT REQUEST MANAGEMENT SYSTEM</h1>
+  
+  {/* subtitle + tagline together */}
+  <div className="hero-text-block">
+    <p className="hero-subtitle">
+      Request, track, and manage laboratory equipment easily.
+    </p>
+    <p className="hero-tagline">
+      Simplifying laboratory management for students & faculty
+    </p>
+  </div>
+
+  {/* button separated */}
+  <div className="hero-button-container">
+    <button className="cta-btn" onClick={() => navigate("/login")}>
+      Get Started
+    </button>
+  </div>
+</div>
     <div className="hero-image">
       <img src="../images/your-professional-image.png" alt="Lab equipment" />
     </div>
