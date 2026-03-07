@@ -34,7 +34,6 @@ export default function LoginSignup() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoginError("");
-
     if (!loginEmail || !loginPassword) return setLoginError("Please fill all fields");
 
     try {
@@ -48,7 +47,6 @@ export default function LoginSignup() {
   const handleSignup = async (e) => {
     e.preventDefault();
     setSignupError("");
-
     if (!fullName || !regNo || !department || !email || !password || !confirm) {
       setSignupError("Please fill all fields");
       return;
@@ -72,7 +70,7 @@ export default function LoginSignup() {
 
   return (
     <div className="login-bg">
-      <div className={`sliding-container`}>
+      <div className="sliding-container">
         {/* LEFT PANEL */}
         <div className={`login-left ${showSignup ? "slide-left" : ""}`}>
           {!showSignup ? (
@@ -90,117 +88,106 @@ export default function LoginSignup() {
 
         {/* RIGHT FORM */}
         <div className={`form-container ${showSignup ? "slide-right" : ""}`}>
-          {!showSignup ? (
-            <form className="login-box" onSubmit={handleLogin}>
-              <h2>Login</h2>
-              <p>Access your account</p>
+          {/* LOGIN FORM */}
+          <form className="login-box" onSubmit={handleLogin}>
+            <h2>Sign In</h2>
+            {loginError && <p className="error">{loginError}</p>}
 
-              {loginError && <p className="error">{loginError}</p>}
+            <label>Email</label>
+            <input
+              type="email"
+              value={loginEmail}
+              onChange={(e) => setLoginEmail(e.target.value)}
+              placeholder="Enter your email"
+              required
+            />
 
-              <label>Email</label>
-              <input
-                type="email"
-                value={loginEmail}
-                onChange={(e) => setLoginEmail(e.target.value)}
-                placeholder="Enter your email"
-                required
-              />
+            <label>Password</label>
+            <input
+              type="password"
+              value={loginPassword}
+              onChange={(e) => setLoginPassword(e.target.value)}
+              placeholder="Enter your password"
+              required
+            />
 
-              <label>Password</label>
-              <input
-                type="password"
-                value={loginPassword}
-                onChange={(e) => setLoginPassword(e.target.value)}
-                placeholder="Enter your password"
-                required
-              />
+            <div className="options">
+              <label className="remember">
+                <input type="checkbox" /> Remember me
+              </label>
+            </div>
 
-              <div className="options">
-                <label className="remember">
-                  <input type="checkbox" /> Remember me
-                </label>
-                {/* Forgot Password modal logic can stay */}
-              </div>
+            <button type="submit" className="login-btn">Sign In</button>
 
-              <button type="submit" className="login-btn">
+            <p>
+              New here?{" "}
+              <span className="link" onClick={() => setShowSignup(true)}>
+                Sign Up
+              </span>
+            </p>
+          </form>
+
+          {/* SIGNUP FORM */}
+          <form className="signup-box" onSubmit={handleSignup}>
+            <h2>Create Account</h2>
+            {signupError && <p className="error">{signupError}</p>}
+
+            <label>Full Name</label>
+            <input value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+
+            <label>Registration Number</label>
+            <input
+              placeholder="2022/E/XXX"
+              value={regNo}
+              onChange={(e) => setRegNo(e.target.value)}
+              required
+            />
+
+            <label>Department</label>
+            <select value={department} onChange={(e) => setDepartment(e.target.value)} required>
+              <option value="">-- Select Department --</option>
+              <option value="CE">Computer Engineering</option>
+              <option value="EEE">Electrical & Electronic Engineering</option>
+            </select>
+
+            <label>Email</label>
+            <input
+              type="email"
+              pattern="20[0-9]{2}e[0-9]{3}@eng\.jfn\.ac\.lk"
+              placeholder="20XXeXXX@eng.jfn.ac.lk"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+
+            <label>Password</label>
+            <input
+              type="password"
+              placeholder="Min 8 chars, Aa1@"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            {isWeakPassword && <small className="error-text">Must be 8+ chars with uppercase, lowercase, number & symbol</small>}
+
+            <label>Confirm Password</label>
+            <input
+              type="password"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              required
+            />
+            {isConfirmMismatch && <small className="error-text">Passwords do not match</small>}
+
+            <button type="submit">Sign Up</button>
+
+            <p>
+              Already have an account?{" "}
+              <span className="link" onClick={() => setShowSignup(false)}>
                 Sign In
-              </button>
-
-              <p>
-                New here?{" "}
-                <span className="link" onClick={() => setShowSignup(true)}>
-                  Sign Up
-                </span>
-              </p>
-            </form>
-          ) : (
-            <form className="signup-box" onSubmit={handleSignup}>
-              <h2>Create Account</h2>
-              <p>Student registration</p>
-
-              {signupError && <p className="error">{signupError}</p>}
-
-              <label>Full Name</label>
-              <input value={fullName} onChange={(e) => setFullName(e.target.value)} required />
-
-              <label>Registration Number</label>
-              <input
-                placeholder="2022/E/XXX"
-                value={regNo}
-                onChange={(e) => setRegNo(e.target.value)}
-                required
-              />
-
-              <label>Department</label>
-              <select value={department} onChange={(e) => setDepartment(e.target.value)} required>
-                <option value="">-- Select Department --</option>
-                <option value="CE">Computer Engineering</option>
-                <option value="EEE">Electrical & Electronic Engineering</option>
-              </select>
-
-              <label>Email</label>
-              <input
-                type="email"
-                pattern="20[0-9]{2}e[0-9]{3}@eng\.jfn\.ac\.lk"
-                placeholder="20XXeXXX@eng.jfn.ac.lk"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-
-              <label>Password</label>
-              <input
-                type="password"
-                placeholder="Min 8 chars, Aa1@"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-              {isWeakPassword && (
-                <small className="error-text">
-                  Must be 8+ characters with uppercase, lowercase, number & symbol
-                </small>
-              )}
-
-              <label>Confirm Password</label>
-              <input
-                type="password"
-                value={confirm}
-                onChange={(e) => setConfirm(e.target.value)}
-                required
-              />
-              {isConfirmMismatch && <small className="error-text">Passwords do not match</small>}
-
-              <button type="submit">Sign Up</button>
-
-              <p>
-                Already have an account?{" "}
-                <span className="link" onClick={() => setShowSignup(false)}>
-                  Sign In
-                </span>
-              </p>
-            </form>
-          )}
+              </span>
+            </p>
+          </form>
         </div>
       </div>
     </div>

@@ -1,19 +1,14 @@
-/* ==============================
-   MAIN BACKGROUND & FLOATING SHAPES
-============================== */
 .login-bg {
   min-height: 100vh;
-  background: linear-gradient(rgba(0,0,0,0.15), rgba(0,0,0,0.15)), url("/images/login-bg.jpg") center/cover no-repeat;
+  background: url("/images/login-bg.jpg") center/cover no-repeat;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  overflow: hidden;
 }
 
 /* Floating background shapes */
-.login-bg::before,
-.login-bg::after {
+.login-bg::before, .login-bg::after {
   content: "";
   position: absolute;
   border-radius: 50%;
@@ -26,37 +21,30 @@
 .login-bg::after { width: 400px; height: 400px; background: #60a5fa; bottom: 10%; right: 5%; animation-duration: 30s; }
 
 @keyframes floatShapes {
-  0% { transform: translateY(0px) translateX(0px) rotate(0deg); }
+  0% { transform: translateY(0) translateX(0) rotate(0deg); }
   25% { transform: translateY(-20px) translateX(10px) rotate(45deg); }
   50% { transform: translateY(20px) translateX(-10px) rotate(90deg); }
   75% { transform: translateY(-10px) translateX(15px) rotate(135deg); }
-  100% { transform: translateY(0px) translateX(0px) rotate(360deg); }
+  100% { transform: translateY(0) translateX(0) rotate(360deg); }
 }
 
-/* ==============================
-   SLIDING CONTAINER
-============================== */
+/* Sliding container */
 .sliding-container {
   display: flex;
   width: 800px;
   max-width: 90%;
-  border-radius: 20px;
+  border-radius: 25px;
   overflow: hidden;
   background: rgba(20,20,20,0.3);
   backdrop-filter: blur(8px);
   box-shadow: 0 20px 60px rgba(0,0,0,0.35);
-  transition: all 0.6s ease;
-  position: relative;
-  z-index: 2;
 }
 
-/* ==============================
-   LEFT PANEL (WELCOME / SIGNUP INFO)
-============================== */
+/* Left panel */
 .login-left {
   flex: 1;
   padding: 50px 40px;
-  background: rgba(37,99,235,0.15); /* soft transparent blue overlay */
+  background: #4f46e5;
   color: white;
   display: flex;
   flex-direction: column;
@@ -64,38 +52,17 @@
   transition: transform 0.6s ease, opacity 0.6s ease;
   z-index: 2;
 }
-.login-left.slide-left {
-  transform: translateX(-100%);
-  opacity: 0;
-}
+.login-left.slide-left { transform: translateX(-100%); opacity: 0; }
 
-.login-left h1 {
-  font-size: 28px;
-  font-weight: 700;
-  margin-bottom: 15px;
-}
+/* Form container */
+.form-container { flex: 1; position: relative; transition: transform 0.6s ease; }
+.form-container.slide-right { transform: translateX(100%); }
 
-.login-left p {
-  font-size: 15px;
-  line-height: 1.6;
-  color: rgba(255,255,255,0.9);
-}
-
-/* ==============================
-   RIGHT PANEL (FORMS)
-============================== */
-.form-container {
-  flex: 1;
-  transition: transform 0.6s ease, opacity 0.6s ease;
-  z-index: 2;
-}
-.form-container.slide-right {
-  transform: translateX(100%);
-  opacity: 0;
-}
-
-/* Forms styling */
+/* Forms */
 .login-box, .signup-box {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
   padding: 40px;
   display: flex;
   flex-direction: column;
@@ -104,23 +71,11 @@
   backdrop-filter: blur(4px);
   color: white;
   border-radius: 0 25px 25px 0;
-  transition: all 0.4s ease;
-  position: relative;
-  z-index: 2;
+  transition: all 0.6s ease;
 }
 
-.login-box h2, .signup-box h2 {
-  text-align: center;
-  font-size: 24px;
-  font-weight: 600;
-  margin-bottom: 5px;
-}
-
-.login-box p, .signup-box p {
-  text-align: center;
-  font-size: 13px;
-  margin-bottom: 20px;
-}
+.login-box h2, .signup-box h2 { text-align: center; font-size: 24px; margin-bottom: 5px; }
+.login-box p, .signup-box p { text-align: center; font-size: 13px; margin-bottom: 20px; }
 
 .login-box input, .signup-box input, .signup-box select {
   width: 100%;
@@ -130,17 +85,8 @@
   border: 1px solid rgba(255,255,255,0.3);
   background: rgba(255,255,255,0.1);
   color: white;
-  transition: all 0.3s ease;
 }
-.login-box input::placeholder, .signup-box input::placeholder {
-  color: rgba(255,255,255,0.6);
-}
-.login-box input:focus, .signup-box input:focus {
-  outline: none;
-  border: 1px solid #60a5fa;
-  background: rgba(255,255,255,0.15);
-  box-shadow: 0 0 10px rgba(96,165,250,0.3);
-}
+.login-box input::placeholder, .signup-box input::placeholder { color: rgba(255,255,255,0.6); }
 
 .login-box button, .signup-box button {
   margin-top: 20px;
@@ -152,58 +98,18 @@
   color: white;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 5px 15px rgba(37,99,235,0.3);
   transition: all 0.3s ease;
 }
-.login-box button:hover, .signup-box button:hover {
-  background: #1e40af;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(37,99,235,0.5);
-}
+.login-box button:hover, .signup-box button:hover { background: #1e40af; transform: translateY(-2px); }
 
-/* Options / links */
-.options {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 10px;
-  font-size: 12px;
-}
-.remember {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-.link {
-  color: #60a5fa;
-  cursor: pointer;
-}
-.link:hover { text-decoration: underline; }
-.error {
-  color: #f87171;
-  font-size: 13px;
-  margin-top: 8px;
-}
+.error { color: #f87171; font-size: 13px; margin-top: 8px; }
+.link { color: #60a5fa; cursor: pointer; text-decoration: underline; }
+.options { display: flex; justify-content: space-between; margin-top: 10px; font-size: 12px; }
+.remember { display: flex; align-items: center; gap: 5px; }
 
-/* ==============================
-   MOBILE RESPONSIVENESS
-============================== */
 @media (max-width: 768px) {
   .sliding-container { flex-direction: column; width: 90%; border-radius: 25px; }
-  .login-left {
-    display: none !important;
-    transform: translateX(0) !important;
-    opacity: 1 !important;
-  }
-  .form-container {
-    width: 100%;
-    transform: translateX(0) !important;
-    opacity: 1 !important;
-  }
-  .login-box, .signup-box {
-    width: 100%;
-    border-radius: 25px;
-    margin: 20px 0;
-    padding: 30px;
-  }
+  .login-left { display: none; transform: translateX(0) !important; opacity: 1 !important; }
+  .form-container { width: 100%; transform: translateX(0) !important; }
+  .login-box, .signup-box { width: 100%; border-radius: 25px; margin: 20px 0; padding: 30px; }
 }
