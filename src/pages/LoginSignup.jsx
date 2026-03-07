@@ -1,20 +1,13 @@
 import "../styles/login.css";
-import { useState, useMemo, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom"; // <-- add useLocation
+import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useRequests } from "../context/RequestContext";
 
 export default function LoginSignup() {
   const navigate = useNavigate();
-  const location = useLocation(); // <-- detect current route
   const { authenticate, registerStudent } = useRequests();
 
-  // Initialize showSignup based on route
-  const [showSignup, setShowSignup] = useState(location.pathname === "/signup");
-
-  // Update showSignup if user navigates to /signup manually
-  useEffect(() => {
-    setShowSignup(location.pathname === "/signup");
-  }, [location.pathname]);
+  const [showSignup, setShowSignup] = useState(false);
 
   // Login state
   const [loginEmail, setLoginEmail] = useState("");
@@ -41,7 +34,9 @@ export default function LoginSignup() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoginError("");
+
     if (!loginEmail || !loginPassword) return setLoginError("Please fill all fields");
+
     try {
       const user = await authenticate(loginEmail, loginPassword);
       navigate(user.redirect);
@@ -53,6 +48,7 @@ export default function LoginSignup() {
   const handleSignup = async (e) => {
     e.preventDefault();
     setSignupError("");
+
     if (!fullName || !regNo || !department || !email || !password || !confirm) {
       setSignupError("Please fill all fields");
       return;
@@ -65,6 +61,7 @@ export default function LoginSignup() {
       setSignupError("Passwords do not match");
       return;
     }
+
     try {
       await registerStudent({ name: fullName, regNo, department, email, password });
       navigate("/login");
@@ -77,37 +74,52 @@ export default function LoginSignup() {
     <div className="login-bg">
       <div className="sliding-container">
         {/* LEFT PANEL */}
-        <div className={`login-left ${showSignup ? "slide-left" : ""}`}>
-          {!showSignup ? (
-            <>
-              <h1>Welcome Back!</h1>
-              <p>Enter your personal details to login</p>
-            </>
-          ) : (
+        <div className="login-left">
+          {showSignup ? (
             <>
               <h1>Create Account</h1>
               <p>Join the system to request and manage laboratory equipment</p>
+            </>
+          ) : (
+            <>
+              <h1>Welcome Back!</h1>
+              <p>Enter your personal details to login</p>
             </>
           )}
         </div>
 
         {/* RIGHT FORM */}
-        <div className={`form-container ${showSignup ? "slide-right" : ""}`}>
+        <div className="form-container">
           {!showSignup ? (
             <form className="login-box" onSubmit={handleLogin}>
               <h2>Login</h2>
               {loginError && <p className="error">{loginError}</p>}
 
               <label>Email</label>
-              <input type="email" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} placeholder="Enter your email" required />
+              <input
+                type="email"
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                placeholder="Enter your email"
+                required
+              />
 
               <label>Password</label>
-              <input type="password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} placeholder="Enter your password" required />
+              <input
+                type="password"
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                placeholder="Enter your password"
+                required
+              />
 
-              <button type="submit">Sign In</button>
+              <button type="submit" className="login-btn">Sign In</button>
 
               <p>
-                New here? <span className="link" onClick={() => setShowSignup(true)}>Sign Up</span>
+                New here?{" "}
+                <span className="link" onClick={() => setShowSignup(true)}>
+                  Sign Up
+                </span>
               </p>
             </form>
           ) : (
@@ -129,7 +141,9 @@ export default function LoginSignup() {
               </select>
 
               <label>Email</label>
-              <input type="email" pattern="20[0-9]{2}e[0-9]{3}@eng\.jfn\.ac\.lk" placeholder="20XXeXXX@eng.jfn.ac.lk" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              <input type="email" pattern="20[0-9]{2}e[0-9]{3}@eng\.jfn\.ac\.lk"
+                placeholder="20XXeXXX@eng.jfn.ac.lk" value={email} onChange={(e) => setEmail(e.target.value)} required
+              />
 
               <label>Password</label>
               <input type="password" placeholder="Min 8 chars, Aa1@" value={password} onChange={(e) => setPassword(e.target.value)} required />
@@ -142,7 +156,10 @@ export default function LoginSignup() {
               <button type="submit">Sign Up</button>
 
               <p>
-                Already have an account? <span className="link" onClick={() => setShowSignup(false)}>Sign In</span>
+                Already have an account?{" "}
+                <span className="link" onClick={() => setShowSignup(false)}>
+                  Sign In
+                </span>
               </p>
             </form>
           )}
