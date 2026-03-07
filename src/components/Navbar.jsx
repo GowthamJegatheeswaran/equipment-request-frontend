@@ -14,7 +14,6 @@ export default function Navbar({ onFeedback }) {
     <nav className="navbar" role="navigation">
       {/* Logo */}
       <div className="logo-container">
-        {/* Use public folder path */}
         <img
           src="/images/logo.png"
           alt="Equipment Request System Logo"
@@ -33,16 +32,12 @@ export default function Navbar({ onFeedback }) {
       </ul>
 
       {/* Login Button */}
-      <Link to="/login" className="nav-btn login-btn" aria-label="Login Page">
+      <Link to="/login" className="login-btn">
         Login
       </Link>
 
       {/* Mobile Menu Toggle */}
-      <div
-        className="menu-toggle"
-        onClick={() => setOpen(!open)}
-        aria-label="Toggle navigation menu"
-      >
+      <div className="menu-toggle" onClick={() => setOpen(!open)}>
         ☰
       </div>
     </nav>
