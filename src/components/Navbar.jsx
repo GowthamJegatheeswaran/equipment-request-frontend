@@ -7,32 +7,46 @@ export default function Navbar({ onFeedback }) {
   const [open, setOpen] = useState(false);
 
   const handleFeedback = () => {
-    setOpen(false);
-    onFeedback();
+    setOpen(false); // close mobile menu
+    onFeedback();   // open feedback modal
   };
 
   return (
     <nav className="navbar">
       {/* Logo */}
       <div className="logo-container">
-        <img src={logo} alt="Logo" className="logo-img" />
+        <img src={logo} alt="Equipment Request System Logo" className="logo-img" />
         <span className="logo-text">Equipment Request Management System</span>
       </div>
 
       {/* Navigation Links */}
       <ul className={`nav-links ${open ? "active" : ""}`}>
-        <li><a href="#home" onClick={() => setOpen(false)}>Home</a></li>
-        <li><a href="#features" onClick={() => setOpen(false)}>Features</a></li>
-        <li><a href="#contact" onClick={() => setOpen(false)}>Contact</a></li>
-        <li><a href="#about" onClick={() => setOpen(false)}>About</a></li>
-        <li><button className="nav-btn" onClick={handleFeedback}>Feedback</button></li>
+        <li>
+          <Link to="/" onClick={() => setOpen(false)}>Home</Link>
+        </li>
+        <li>
+          <Link to="/#features" onClick={() => setOpen(false)}>Features</Link>
+        </li>
+        <li>
+          <Link to="/#contact" onClick={() => setOpen(false)}>Contact</Link>
+        </li>
+        <li>
+          <Link to="/#about" onClick={() => setOpen(false)}>About</Link>
+        </li>
+        <li>
+          <button className="nav-btn" onClick={handleFeedback}>Feedback</button>
+        </li>
       </ul>
 
       {/* Login Button */}
-      <Link to="/login" className="nav-btn login-btn">Login</Link>
+      <Link to="/login" className="nav-btn login-btn" aria-label="Login Page">Login</Link>
 
       {/* Mobile Menu Toggle */}
-      <div className="menu-toggle" onClick={() => setOpen(!open)}>
+      <div
+        className="menu-toggle"
+        onClick={() => setOpen(!open)}
+        aria-label="Toggle navigation menu"
+      >
         ☰
       </div>
     </nav>

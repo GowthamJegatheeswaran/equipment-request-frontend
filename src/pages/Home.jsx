@@ -17,25 +17,35 @@ export default function Home() {
       {/* Hero Section */}
       <section className="hero" id="home">
         <div className="hero-content fade-in">
+          {/* Text Column */}
           <div className="hero-text">
             <h1>EQUIPMENT REQUEST MANAGEMENT SYSTEM</h1>
             <div className="hero-text-block">
               <p className="hero-subtitle">
-                Request, track, and manage laboratory equipment easily.
+                Request, track, and manage laboratory equipment efficiently and professionally.
               </p>
               <p className="hero-tagline">
-                Simplifying laboratory management for students & faculty
+                Simplifying laboratory management for students & faculty.
               </p>
             </div>
             <div className="hero-button-container">
-              <button className="cta-btn" onClick={() => navigate("/login")}>
+              <button 
+                className="cta-btn" 
+                onClick={() => navigate("/login")}
+                aria-label="Go to login page"
+              >
                 Get Started
               </button>
             </div>
           </div>
 
+          {/* Image Column */}
           <div className="hero-image">
-            <img src={HeroImg} alt="Equipment Request System Illustration" />
+            <img 
+              src={HeroImg} 
+              alt="Illustration showing equipment request management" 
+              loading="lazy"
+            />
           </div>
         </div>
       </section>
@@ -55,28 +65,28 @@ export default function Home() {
             <FaLock className="icon" />
             <p className="feature-title">Secure Login</p>
             <p className="feature-desc">
-              Login safely with your university credentials to protect your data.
+              Login safely with your university credentials to protect your personal and lab data.
             </p>
           </article>
           <article className="card">
             <FaClipboardList className="icon" />
             <p className="feature-title">Easy Requests</p>
             <p className="feature-desc">
-              Submit equipment requests in a few simple steps, saving time.
+              Submit equipment requests in just a few steps, saving time and effort.
             </p>
           </article>
           <article className="card">
             <FaBolt className="icon" />
             <p className="feature-title">Fast Access</p>
             <p className="feature-desc">
-              Track and access your requests quickly from anywhere.
+              Quickly track and access the status of your requests from anywhere.
             </p>
           </article>
           <article className="card">
             <FaUniversity className="icon" />
             <p className="feature-title">University Approved</p>
             <p className="feature-desc">
-              All requests are reviewed and approved by your department seamlessly.
+              Requests are reviewed and approved by the respective department automatically.
             </p>
           </article>
         </div>
