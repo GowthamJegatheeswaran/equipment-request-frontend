@@ -84,7 +84,7 @@ body {
   justify-content: center;
   align-items: center;
   padding: 80px 100px;
-  background: #fbfbfb; /* soft professional background */
+  background: #f8fafc; /* soft professional background */
 }
 
 .hero-content {
@@ -136,10 +136,6 @@ body {
   box-shadow: 0 8px 20px rgba(0,0,0,0.1); /* subtle shadow for depth */
 }
 
-.hero-image img:hover {
-  transform: scale(1.05);
-  transition: transform 0.4s ease;
-}
 
 .fade-in {
   animation: fadeInUp 1s ease forwards;
