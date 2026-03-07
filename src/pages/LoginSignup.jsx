@@ -74,22 +74,22 @@ export default function LoginSignup() {
     <div className="login-bg">
       <div className="sliding-container">
         {/* LEFT PANEL */}
-        <div className="login-left">
-          {showSignup ? (
-            <>
-              <h1>Create Account</h1>
-              <p>Join the system to request and manage laboratory equipment</p>
-            </>
-          ) : (
-            <>
-              <h1>Welcome Back!</h1>
-              <p>Enter your personal details to login</p>
-            </>
-          )}
-        </div>
+        <div className={`login-left ${showSignup ? "slide-left" : ""}`}>
+  {!showSignup ? (
+    <>
+      <h1>Welcome Back!</h1>
+      <p>Enter your personal details to login</p>
+    </>
+  ) : (
+    <>
+      <h1>Create Account</h1>
+      <p>Join the system to request and manage laboratory equipment</p>
+    </>
+  )}
+</div>
 
         {/* RIGHT FORM */}
-        <div className="form-container">
+        <div className={`form-container ${showSignup ? "slide-right" : ""}`}>
           {!showSignup ? (
             <form className="login-box" onSubmit={handleLogin}>
               <h2>Login</h2>
