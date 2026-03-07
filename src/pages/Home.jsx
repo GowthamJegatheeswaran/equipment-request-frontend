@@ -16,14 +16,18 @@ export default function Home() {
       <Navbar onFeedback={() => setShowFeedback(true)} />
 
       <section className="hero">
-  <div className="hero-overlay"></div>
-  <div className="hero-content container fade-in">
-    <h1>Welcome to our <br />Equipment Request System</h1>
-    <p className="hero-subtitle">Request, track, and manage laboratory equipment easily.</p>
-    <button className="cta-btn" onClick={() => navigate("/login")} aria-label="Get Started">
-      Get Started
-    </button>
-    <p className="hero-tagline">Simplifying laboratory management for students & faculty</p>
+  <div className="hero-content fade-in">
+    <div className="hero-text">
+      <h1>EQUIPMENT REQUEST MANAGEMENT SYSTEM</h1>
+      <p className="hero-subtitle">Request, track, and manage laboratory equipment easily.</p>
+      <button className="cta-btn" onClick={() => navigate("/login")} aria-label="Get Started">
+        Get Started
+      </button>
+      <p className="hero-tagline">Simplifying laboratory management for students & faculty</p>
+    </div>
+    <div className="hero-image">
+      <img src="../images/your-professional-image.png" alt="Lab equipment" />
+    </div>
   </div>
 </section>
 
