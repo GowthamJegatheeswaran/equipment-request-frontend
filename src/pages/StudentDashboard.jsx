@@ -5,6 +5,14 @@ import SummaryCard from "../components/SummaryCard"
 import { useEffect, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { StudentRequestAPI } from "../api/api"
+import { 
+  AiOutlineClockCircle,   // Pending
+  AiOutlineCheckCircle,   // Approved
+  AiOutlineCloseCircle,   // Rejected
+  AiOutlineFileText       // Total Requests
+} from "react-icons/ai"
+
+import { AiOutlineEye, AiOutlinePlus } from "react-icons/ai"
 
 export default function StudentDashboard() {
   const navigate = useNavigate()
@@ -71,34 +79,83 @@ export default function StudentDashboard() {
           {error && <div className="error-message">{error}</div>}
 
           <div className="summary-grid" style={{ marginTop: 12 }}>
-            <SummaryCard title="Pending" value={counts.pending} color="yellow" />
-            <SummaryCard title="Approved" value={counts.approved} color="green" />
-            <SummaryCard title="Rejected" value={counts.rejected} color="red" />
-            <SummaryCard title="Total Requests" value={counts.total} color="blue" />
-          </div>
+  <div className="summary-card pending">
+    <div className="card-icon"><AiOutlineClockCircle size={28} /></div>
+    <div className="card-info">
+      <h4>Pending</h4>
+      <p>{counts.pending}</p>
+    </div>
+  </div>
+  <div className="summary-card approved">
+    <div className="card-icon"><AiOutlineCheckCircle size={28} /></div>
+    <div className="card-info">
+      <h4>Approved</h4>
+      <p>{counts.approved}</p>
+    </div>
+  </div>
+  <div className="summary-card rejected">
+    <div className="card-icon"><AiOutlineCloseCircle size={28} /></div>
+    <div className="card-info">
+      <h4>Rejected</h4>
+      <p>{counts.rejected}</p>
+    </div>
+  </div>
+  <div className="summary-card total">
+    <div className="card-icon"><AiOutlineFileText size={28} /></div>
+    <div className="card-info">
+      <h4>Total Requests</h4>
+      <p>{counts.total}</p>
+    </div>
+  </div>
+</div>
 
           <h3>Quick Actions</h3>
-          <div className="actions">
-            <button onClick={() => navigate("/view-requests")}>View Requests</button>
-            <button onClick={() => navigate("/new-request")}>New Requests</button>
-          </div>
+          
+
+<div className="actions">
+  <button onClick={() => navigate("/view-requests")}>
+    <AiOutlineEye style={{ marginRight: 6 }} /> View Requests
+  </button>
+  <button onClick={() => navigate("/new-request")}>
+    <AiOutlinePlus style={{ marginRight: 6 }} /> New Requests
+  </button>
+</div>
 
           <h3>Recent Requests</h3>
-          <div className="recent-cards">
-            {recent.length === 0 && !loading && <p>No requests submitted yet</p>}
-            {recent.map((r) => {
-              const p = itemsPreview(r)
-              const statusClass = String(r.status || "").toLowerCase()
-              return (
-                <div key={r.requestId} className="recent-card">
-                  <div className="recent-card-row"><strong>Equipment:</strong> {p.text}</div>
-                  <div className="recent-card-row"><strong>Quantity:</strong> {p.qty}</div>
-                  <div className="recent-card-row"><strong>From:</strong> {r.fromDate || "-"}</div>
-                  <div className={`status ${statusClass}`}>{r.status || "-"}</div>
-                </div>
-              )
-            })}
-          </div>
+          <table className="requests-table">
+  <thead>
+    <tr>
+      <th>Equipment</th>
+      <th>Quantity</th>
+      <th>From</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    {recent.map((r) => {
+      const p = itemsPreview(r)
+      const statusClass = String(r.status || "").toLowerCase()
+      return (
+        <tr key={r.requestId}>
+          <td>{p.text}</td>
+          <td style={{ textAlign: "center" }}>{p.qty}</td>
+          <td style={{ textAlign: "center" }}>{r.fromDate || "-"}</td>
+          <td style={{ textAlign: "center", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+            {statusClass === "pending_lecturer_approval" && <AiOutlineClockCircle color="#fbbf24" />}
+            {statusClass === "approved" && <AiOutlineCheckCircle color="#16a34a" />}
+            {statusClass === "rejected_by_lecturer" && <AiOutlineCloseCircle color="#dc2626" />}
+            <span>{r.status || "-"}</span>
+          </td>
+        </tr>
+      )
+    })}
+    {recent.length === 0 && !loading && (
+      <tr>
+        <td colSpan="4" style={{ textAlign: "center" }}>No requests submitted yet</td>
+      </tr>
+    )}
+  </tbody>
+</table>
         </div>
 
         <footer>

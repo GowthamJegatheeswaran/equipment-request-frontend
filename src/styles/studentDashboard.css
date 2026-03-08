@@ -180,12 +180,24 @@
 }
 
 .summary-card {
-  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
   padding: 20px;
-  border-radius: 8px;
-  text-align: center;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  gap: 15px;
+  color: white;
 }
+
+.summary-card.pending { background: #fbbf24; } /* yellow */
+.summary-card.approved { background: #16a34a; } /* green */
+.summary-card.rejected { background: #dc2626; } /* red */
+.summary-card.total { background: #2563eb; } /* blue */
+
+.card-icon { font-size: 32px; }
+.card-info h4 { margin: 0; font-size: 16px; }
+.card-info p { margin: 0; font-size: 20px; font-weight: 600; }
 
 /* ACTIONS */
 .actions {
@@ -193,12 +205,21 @@
 }
 
 .actions button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   padding: 10px 20px;
   margin-right: 10px;
   border: none;
-  border-radius: 6px;
-  background: #eee;
+  border-radius: 8px;
+  background: #2563eb;
+  color: white;
   cursor: pointer;
+  font-weight: 600;
+}
+
+.actions button:hover {
+  background: #1d4ed8;
 }
 
 /* TABLE */
@@ -206,23 +227,28 @@
   width: 100%;
   border-collapse: collapse;
   background: white;
-  margin-top: 10px;
+  margin-top: 15px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
 .requests-table th,
 .requests-table td {
-  padding: 12px;
+  padding: 12px 10px;
   text-align: center;
   border-bottom: 1px solid #ddd;
 }
 
 /* STATUS */
-.status {
-  padding: 5px 12px;
-  border-radius: 4px;
-  font-size: 14px;
-}
+.requests-table tr:hover { background: #f3f4f6; }
 
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+}
 .pending {
   background: yellow;
 }
@@ -562,3 +588,13 @@ footer {
 .status.pending_lecturer_approval { background: #facc15; color: #111; }
 .status.rejected_by_lecturer { background: #dc2626; color: white; }
 .status.approved { background: #16a34a; color: white; }
+
+.requests-table th, .requests-table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid #ddd;
+  text-align: center;
+}
+
+.requests-table tr:hover { background: #f3f4f6; }
+
+.status { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 6px; font-weight: 600; }
