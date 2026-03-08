@@ -127,66 +127,91 @@ export default function ViewRequests() {
           </div>
 
           <table className="requests-table view-requests-table">
-            <thead>
-              <tr>
-                <th>Request_ID</th>
-                <th>Lab</th>
-                <th>Lecturer</th>
-                <th>Items</th>
-                <th>From</th>
-                <th>To</th>
-                <th>Status</th>
-                <th style={{ textAlign: "center" }}>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.requestId}>
-                  <td style={{ textAlign: "center" }}>{r.requestId}</td>
-                  <td>{r.labName || "-"}</td>
-                  <td>{r.lecturerName || "-"}</td>
-                  <td className="items-column">
-                    {Array.isArray(r.items) && r.items.length > 0
-                      ? r.items.map((it) => `${it.equipmentName || `Equipment #${it.equipmentId}`}: ${it.quantity}`).join(", ")
-                      : "-"
-                    }
-                  </td>
-                  <td style={{ textAlign: "center" }}>{r.fromDate || "-"}</td>
-                  <td style={{ textAlign: "center" }}>{r.toDate || "-"}</td>
-                  <td style={{ textAlign: "center" }}>
-                    {Array.isArray(r.items) && r.items.length > 0 ? (
-                      <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                        {r.items.map((it) => (
-                          <span
-                            key={it.requestItemId}
-                            className={`status ${
-                              it.itemStatus
-                                ? String(it.itemStatus).toLowerCase().replace(/ /g, "_")
-                                : "status-default"
-                            }`}
-                          >
-                            {it.itemStatus || "-"}
-                          </span>
-                        ))}
-                      </div>
-                    ) : "-"}
-                  </td>
-                  <td style={{ textAlign: "center" }}>
-                    {Array.isArray(r.items) && r.items.length > 0 ? (
-                      <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                        {r.items.map((it) => renderAction({ _item: it, _itemStatus: it.itemStatus }))}
-                      </div>
-                    ) : "-"}
-                  </td>
-                </tr>
-              ))}
-              {rows.length === 0 && !loading && (
-                <tr>
-                  <td colSpan="8" style={{ textAlign: "center" }}>No requests found</td>
-                </tr>
+  <thead>
+    <tr>
+      <th>Request_ID</th>
+      <th>Lab</th>
+      <th>Lecturer</th>
+      <th>Items</th>
+      <th>From</th>
+      <th>To</th>
+      <th>Status</th>
+      <th style={{ textAlign: "center" }}>Action</th>
+    </tr>
+  </thead>
+  <tbody>
+    {rows.map((r) => (
+      <tr key={r.requestId}>
+        <td style={{ textAlign: "center" }}>{r.requestId}</td>
+        <td>{r.labName || "-"}</td>
+        <td>{r.lecturerName || "-"}</td>
+        <td className="items-column">
+          {Array.isArray(r.items) && r.items.length > 0
+            ? r.items
+                .map(
+                  (it) =>
+                    `${it.equipmentName || `Equipment #${it.equipmentId}`}: ${it.quantity}`
+                )
+                .join(", ")
+            : "-"}
+        </td>
+        <td style={{ textAlign: "center" }}>{r.fromDate || "-"}</td>
+        <td style={{ textAlign: "center" }}>{r.toDate || "-"}</td>
+
+        {/* Status Column */}
+        <td style={{ textAlign: "center" }}>
+          {Array.isArray(r.items) && r.items.length > 0 ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              {r.items.map((it) => {
+                const statusMap = {
+                  REJECTED_BY_LECTURER: "rejected_by_lecturer",
+                  APPROVED: "approved",
+                  ISSUED_PENDING_REQUESTER_ACCEPT: "issued",
+                  ISSUED_CONFIRMED: "accepted",
+                  RETURN_REQUESTED: "returnrequested",
+                  RETURNED: "returned",
+                  PENDING: "pending",
+                  REJECTED: "rejected",
+                };
+
+                const statusClass = statusMap[it.itemStatus?.trim()] || "status-default";
+
+                return (
+                  <span key={it.requestItemId} className={`status ${statusClass}`}>
+                    {it.itemStatus || "-"}
+                  </span>
+                );
+              })}
+            </div>
+          ) : (
+            "-"
+          )}
+        </td>
+
+        {/* Action Column */}
+        <td style={{ textAlign: "center" }}>
+          {Array.isArray(r.items) && r.items.length > 0 ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              {r.items.map((it) =>
+                renderAction({ _item: it, _itemStatus: it.itemStatus })
               )}
-            </tbody>
-          </table>
+            </div>
+          ) : (
+            "-"
+          )}
+        </td>
+      </tr>
+    ))}
+
+    {rows.length === 0 && !loading && (
+      <tr>
+        <td colSpan="8" style={{ textAlign: "center" }}>
+          No requests found
+        </td>
+      </tr>
+    )}
+  </tbody>
+</table>
         </div>
       </div>
     </div>
