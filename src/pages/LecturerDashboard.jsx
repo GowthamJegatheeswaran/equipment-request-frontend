@@ -1,20 +1,19 @@
-import "../styles/lecturerDashboard.css"
+import "../styles/studentDashboard.css"
 import Sidebar from "../components/Sidebar"
 import Topbar from "../components/Topbar"
 import SummaryCard from "../components/SummaryCard"
 import { useEffect, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { LecturerRequestAPI, AuthAPI } from "../api/api"
-import { AiOutlinePlus, AiOutlineFileText, AiOutlineClockCircle, AiOutlineCheckCircle } from "react-icons/ai"
+import { LecturerRequestAPI } from "../api/api"
 
 export default function LecturerDashboard() {
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+
   const [queue, setQueue] = useState([])
   const [myRows, setMyRows] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
-  const [user, setUser] = useState(null)
 
   const load = async () => {
     setError("")
@@ -32,20 +31,13 @@ export default function LecturerDashboard() {
 
   useEffect(() => {
     load()
-    const fetchUser = async () => {
-      try {
-        const me = await AuthAPI.me()
-        setUser(me)
-      } catch (err) {
-        console.error("Failed to fetch user", err)
-      }
-    }
-    fetchUser()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const counts = useMemo(() => {
+    // Lecturer approvals queue = pending list
     const pending = queue.length
+    // Lecturer's own created requests (approved path)
     const totalMine = myRows.length
     return { pending, totalMine }
   }, [queue, myRows])
@@ -65,35 +57,33 @@ export default function LecturerDashboard() {
   return (
     <div className="dashboard-container">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
       <div className="main-content">
         <Topbar onMenuClick={() => setSidebarOpen(true)} />
 
         <div className="content">
-          {/* Welcome Lecturer */}
-          <h2 className="welcome">
-            Welcome, {user?.fullName || "Lecturer"}!
-          </h2>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <h2 className="welcome" style={{ margin: 0 }}>Lecturer Dashboard</h2>
+            <button className="btn-submit" type="button" onClick={load} disabled={loading}>
+              {loading ? "Loading..." : "Refresh"}
+            </button>
+          </div>
 
-          {error && <div className="error-message" style={{ color: "red", marginBottom: 10 }}>{error}</div>}
+          {error && <div className="error-message" style={{ color: "red", marginTop: 10 }}>{error}</div>}
 
-          {/* Summary Cards */}
+          <h3>Quick Summary Card</h3>
           <div className="summary-grid">
-            <SummaryCard title="Pending Applications" value={counts.pending} icon={<AiOutlineClockCircle size={28} />} color="#fbbf24" />
-            <SummaryCard title="My Total Requests" value={counts.totalMine} icon={<AiOutlineFileText size={28} />} color="#2563eb" />
+            <SummaryCard title="Pending Applications" value={counts.pending} />
+            <SummaryCard title="My Total Requests" value={counts.totalMine} />
           </div>
 
-          {/* Quick Actions Horizontal */}
-          <div className="actions" style={{ flexDirection: "row" }}>
-            <button onClick={() => navigate("/lecturer-new-request")}>
-              <AiOutlinePlus size={18} /> New Request
-            </button>
-            <button onClick={() => navigate("/lecturer-applications")}>
-              <AiOutlineFileText size={18} /> Applications
-            </button>
+          <h3>Quick Actions</h3>
+          <div className="actions">
+            <button onClick={() => navigate("/lecturer-new-request")}>New Requests</button>
+            <button onClick={() => navigate("/lecturer-applications")}>Applications</button>
           </div>
 
-          {/* Recent Requests Table */}
-          <h3 style={{ marginTop: 24 }}>My Recent Requests</h3>
+          <h3>My Recent Requests</h3>
           <table className="requests-table">
             <thead>
               <tr>
@@ -119,12 +109,18 @@ export default function LecturerDashboard() {
               })}
               {recentMine.length === 0 && !loading && (
                 <tr>
-                  <td colSpan="4" style={{ textAlign: "center" }}>No requests yet</td>
+                  <td colSpan="4" style={{ textAlign: "center" }}>
+                    No requests yet
+                  </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
+
+        <footer>
+          Faculty of Engineering | University of Jaffna <br />© Copyright 2026. All Rights Reserved - ERS
+        </footer>
       </div>
     </div>
   )
