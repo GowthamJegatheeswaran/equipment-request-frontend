@@ -240,25 +240,39 @@
   font-size: 14px;
 }
 
-.requests-table th {
-  background: #f9fafb;          /* soft light gray */
-  padding: 14px 16px;
-  text-align: left;
-  font-weight: 600;
-  color: #111827;
-  border-bottom: 1px solid #e5e7eb;
-}
-
+.requests-table th, 
 .requests-table td {
   padding: 14px 16px;
-  text-align: left;
   border-bottom: 1px solid #e5e7eb;
+  font-size: 14px;
   color: #374151;
 }
 
+.requests-table th {
+  text-align: left; /* header left-aligned for professional look */
+}
+
+.requests-table td {
+  text-align: left; /* data left-aligned by default */
+}
+
+.requests-table td:nth-child(2), /* Quantity column */
+.requests-table td:nth-child(3)  /* From column */
+{
+  text-align: center; /* center numeric or date values */
+}
+.requests-table td:nth-child(4) { /* Status column */
+  text-align: center; /* center the status pill + icon */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px; /* space between icon and text */
+}
+
 .requests-table tbody tr:hover {
-  background: #f3f4f6;          /* subtle hover effect */
+  background: #f3f4f6;
   transition: background 0.2s ease;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
 }
 
 /* STATUS */
@@ -672,7 +686,7 @@ footer {
 
 .status.rejected_by_lecturer {
   background: #dc2626;  /* red */
-
+}
 .requests-table th, .requests-table td {
   padding: 12px 10px;
   border-bottom: 1px solid #ddd;
