@@ -3,10 +3,8 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useRequests } from "../context/RequestContext";
 
-
 export default function LoginSignup() {
-  // Add near the top with your other state hooks
-const [signupSuccess, setSignupSuccess] = useState("");
+  const [signupSuccess, setSignupSuccess] = useState("");
   const navigate = useNavigate();
   const { authenticate, registerStudent } = useRequests();
 
@@ -34,20 +32,28 @@ const [signupSuccess, setSignupSuccess] = useState("");
   const isWeakPassword = password.length > 0 && !strongPattern.test(password);
   const isConfirmMismatch = confirm.length > 0 && password !== confirm;
 
+  // UPDATED LOGIN HANDLER
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoginError("");
 
-    if (!loginEmail || !loginPassword) return setLoginError("Please fill all fields");
+    if (!loginEmail || !loginPassword) {
+      setLoginError("Please fill all fields");
+      return;
+    }
 
     try {
+      // Backend decides the user type (student, lecturer, admin)
       const user = await authenticate(loginEmail, loginPassword);
-      navigate(user.redirect);
+
+      // Navigate to the proper dashboard
+      navigate(user.redirect); 
     } catch (err) {
       setLoginError(err?.message || "Invalid email or password");
     }
   };
 
+  // Signup logic remains unchanged
   const handleSignup = async (e) => {
     e.preventDefault();
     setSignupError("");
@@ -66,22 +72,20 @@ const [signupSuccess, setSignupSuccess] = useState("");
     }
 
     try {
-  await registerStudent({ name: fullName, regNo, department, email, password });
+      await registerStudent({ name: fullName, regNo, department, email, password });
 
-  // ✅ Clear the form fields
-  setFullName("");
-  setRegNo("");
-  setDepartment("");
-  setEmail("");
-  setPassword("");
-  setConfirm("");
+      setFullName("");
+      setRegNo("");
+      setDepartment("");
+      setEmail("");
+      setPassword("");
+      setConfirm("");
 
-    setSignupError("");
-  setSignupSuccess("Signup successful! You can now log in.");
+      setSignupError("");
+      setSignupSuccess("Signup successful! You can now log in.");
 
-  
-    setTimeout(() => setSignupSuccess(""), 3000);
-} catch (err) {
+      setTimeout(() => setSignupSuccess(""), 3000);
+    } catch (err) {
       setSignupError(err?.message || "Signup failed");
     }
   };
@@ -140,6 +144,7 @@ const [signupSuccess, setSignupSuccess] = useState("");
             </form>
           ) : (
             <form className="signup-box" onSubmit={handleSignup}>
+              {/* SIGNUP FORM UNCHANGED */}
               <h2>Create Account</h2>
               {signupError && <p className="error">{signupError}</p>}
               {signupSuccess && <p className="success">{signupSuccess}</p>}
