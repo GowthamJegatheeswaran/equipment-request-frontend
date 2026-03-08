@@ -793,6 +793,21 @@ footer {
   word-break: break-word;
 }
 
+.view-requests-table td.items-column > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.view-requests-table td.items-column span.status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
 .view-requests-table td.items-column ul {
   list-style: none;
   padding: 0;

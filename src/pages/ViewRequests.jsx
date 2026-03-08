@@ -151,32 +151,65 @@ export default function ViewRequests() {
     </tr>
   </thead>
 <tbody>
-  {filtered.map((r) => (
+  {rows.map((r) => (
     <tr key={r.requestId}>
       <td style={{ textAlign: "center" }}>{r.requestId}</td>
       <td>{r.labName || "-"}</td>
       <td>{r.lecturerName || "-"}</td>
 
-      {/* Items column: all items in one line, comma separated */}
+      {/* Items column: each item as a mini block with status & actions */}
       <td className="items-column">
-        {Array.isArray(r.items) 
-          ? r.items.map((it) => `${it.equipmentName || `Equipment #${it.equipmentId}`}: ${it.quantity}`).join(", ")
-          : "-"
-        }
+        {Array.isArray(r.items) && r.items.length > 0 ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+            {r.items.map((it) => (
+              <div
+                key={it.requestItemId}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: "8px",
+                  flexWrap: "wrap",
+                }}
+              >
+                <span>
+                  {it.equipmentName || `Equipment #${it.equipmentId}`}: {it.quantity}
+                </span>
+
+                {/* Status pill */}
+                <span className={`status ${String(it.itemStatus || "").toLowerCase()}`}>
+                  {it.itemStatus || "-"}
+                </span>
+
+                {/* Action button */}
+                {renderAction({ _item: it, _itemStatus: it.itemStatus })}
+              </div>
+            ))}
+          </div>
+        ) : (
+          "-"
+        )}
       </td>
 
       <td style={{ textAlign: "center" }}>{r.fromDate || "-"}</td>
       <td style={{ textAlign: "center" }}>{r.toDate || "-"}</td>
+      
+      {/* For the main status column, you can either show first item or leave blank */}
       <td style={{ textAlign: "center" }}>
-        <span className={`status ${String(r._itemStatus || "").toLowerCase()}`}>
-          {r._itemStatus || "-"}
-        </span>
+        {r.items && r.items.length > 0 && (
+          <span className={`status ${String(r.items[0].itemStatus || "").toLowerCase()}`}>
+            {r.items[0].itemStatus || "-"}
+          </span>
+        )}
       </td>
-      <td style={{ textAlign: "center" }}>{renderAction(r)}</td>
+
+      <td style={{ textAlign: "center" }}>
+        {/* Optionally leave empty, as each item has its own action above */}
+      </td>
     </tr>
   ))}
 
-  {filtered.length === 0 && !loading && (
+  {rows.length === 0 && !loading && (
     <tr>
       <td colSpan="8" style={{ textAlign: "center" }}>
         No requests found
