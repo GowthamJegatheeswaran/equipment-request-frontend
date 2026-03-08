@@ -170,19 +170,26 @@ export default function ViewRequests() {
       <td style={{ textAlign: "center" }}>{r.toDate || "-"}</td>
 
       {/* Status column: multiple pills if multiple items */}
-      <td style={{ textAlign: "center" }}>
-        {Array.isArray(r.items) && r.items.length > 0 ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-            {r.items.map((it) => (
-              <span key={it.requestItemId} className={`status ${String(it.itemStatus || "").toLowerCase()}`}>
-                {it.itemStatus || "-"}
-              </span>
-            ))}
-          </div>
-        ) : (
-          "-"
-        )}
-      </td>
+      {/* Status column: multiple pills if multiple items */}
+<td style={{ textAlign: "center" }}>
+  {Array.isArray(r.items) && r.items.length > 0 ? (
+    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+      {r.items.map((it) => {
+        // dynamically assign class, fallback to 'status-default' if unknown
+        const statusClass = it.itemStatus
+          ? String(it.itemStatus).toLowerCase()
+          : "status-default"
+        return (
+          <span key={it.requestItemId} className={`status ${statusClass}`}>
+            {it.itemStatus || "-"}
+          </span>
+        )
+      })}
+    </div>
+  ) : (
+    "-"
+  )}
+</td>
 
       {/* Action column: multiple buttons if multiple items */}
       <td style={{ textAlign: "center" }}>
