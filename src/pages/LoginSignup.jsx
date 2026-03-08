@@ -1,94 +1,89 @@
-import "../styles/login.css";
-import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
-import { useRequests } from "../context/RequestContext";
+import "../styles/login.css"
+import { useState, useMemo } from "react"
+import { useNavigate } from "react-router-dom"
+import { useRequests } from "../context/RequestContext"
 
 export default function LoginSignup() {
-  const [signupSuccess, setSignupSuccess] = useState("");
-  const navigate = useNavigate();
-  const { authenticate, registerStudent } = useRequests();
+  const navigate = useNavigate()
+  const { authenticate, registerStudent } = useRequests()
 
-  const [showSignup, setShowSignup] = useState(false);
+  // Toggle form
+  const [showSignup, setShowSignup] = useState(false)
 
-  // Login state
-  const [loginEmail, setLoginEmail] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
-  const [loginError, setLoginError] = useState("");
+  // ---------- LOGIN STATE ----------
+  const [loginEmail, setLoginEmail] = useState("")
+  const [loginPassword, setLoginPassword] = useState("")
+  const [loginError, setLoginError] = useState("")
 
-  // Signup state
-  const [fullName, setFullName] = useState("");
-  const [regNo, setRegNo] = useState("");
-  const [department, setDepartment] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
-  const [signupError, setSignupError] = useState("");
+  // ---------- SIGNUP STATE ----------
+  const [fullName, setFullName] = useState("")
+  const [regNo, setRegNo] = useState("")
+  const [department, setDepartment] = useState("")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [confirm, setConfirm] = useState("")
+  const [signupError, setSignupError] = useState("")
+  const [signupSuccess, setSignupSuccess] = useState("")
 
   const strongPattern = useMemo(
     () => /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}/,
     []
-  );
+  )
 
-  const isWeakPassword = password.length > 0 && !strongPattern.test(password);
-  const isConfirmMismatch = confirm.length > 0 && password !== confirm;
+  const isWeakPassword = password.length > 0 && !strongPattern.test(password)
+  const isConfirmMismatch = confirm.length > 0 && password !== confirm
 
-  // UPDATED LOGIN HANDLER
+  // ---------- LOGIN HANDLER ----------
   const handleLogin = async (e) => {
-    e.preventDefault();
-    setLoginError("");
-
-    if (!loginEmail || !loginPassword) {
-      setLoginError("Please fill all fields");
-      return;
-    }
+    e.preventDefault()
+    setLoginError("")
+    if (!loginEmail || !loginPassword) return setLoginError("Please fill all fields")
 
     try {
-      // Backend decides the user type (student, lecturer, admin)
-      const user = await authenticate(loginEmail, loginPassword);
-
-      // Navigate to the proper dashboard
-      navigate(user.redirect); 
+      const user = await authenticate(loginEmail, loginPassword)
+      navigate(user.redirect)
     } catch (err) {
-      setLoginError(err?.message || "Invalid email or password");
+      setLoginError(err?.message || "Invalid email or password")
     }
-  };
+  }
 
-  // Signup logic remains unchanged
+  // ---------- SIGNUP HANDLER ----------
   const handleSignup = async (e) => {
-    e.preventDefault();
-    setSignupError("");
+    e.preventDefault()
+    setSignupError("")
+    setSignupSuccess("")
 
     if (!fullName || !regNo || !department || !email || !password || !confirm) {
-      setSignupError("Please fill all fields");
-      return;
+      setSignupError("Please fill all fields")
+      return
     }
     if (isWeakPassword) {
-      setSignupError("Please use a strong password");
-      return;
+      setSignupError("Please use a strong password")
+      return
     }
     if (isConfirmMismatch) {
-      setSignupError("Passwords do not match");
-      return;
+      setSignupError("Passwords do not match")
+      return
     }
 
     try {
-      await registerStudent({ name: fullName, regNo, department, email, password });
+      await registerStudent({ name: fullName, regNo, department, email, password })
 
-      setFullName("");
-      setRegNo("");
-      setDepartment("");
-      setEmail("");
-      setPassword("");
-      setConfirm("");
+      // Clear form
+      setFullName("")
+      setRegNo("")
+      setDepartment("")
+      setEmail("")
+      setPassword("")
+      setConfirm("")
+      setSignupError("")
+      setSignupSuccess("Signup successful! You can now log in.")
 
-      setSignupError("");
-      setSignupSuccess("Signup successful! You can now log in.");
-
-      setTimeout(() => setSignupSuccess(""), 3000);
+      setTimeout(() => setSignupSuccess(""), 3000)
     } catch (err) {
-      setSignupError(err?.message || "Signup failed");
+      setSignupError(err?.message || "Signup failed")
     }
-  };
+  }
 
   return (
     <div className="login-bg">
@@ -144,7 +139,6 @@ export default function LoginSignup() {
             </form>
           ) : (
             <form className="signup-box" onSubmit={handleSignup}>
-              {/* SIGNUP FORM UNCHANGED */}
               <h2>Create Account</h2>
               {signupError && <p className="error">{signupError}</p>}
               {signupSuccess && <p className="success">{signupSuccess}</p>}
@@ -188,5 +182,5 @@ export default function LoginSignup() {
         </div>
       </div>
     </div>
-  );
+  )
 }
