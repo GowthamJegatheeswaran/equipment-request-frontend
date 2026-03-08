@@ -5,6 +5,7 @@ import SummaryCard from "../components/SummaryCard"
 import { useEffect, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { StudentRequestAPI } from "../api/api"
+import { AiOutlinePlus } from "react-icons/ai";
 import { 
   AiOutlineClockCircle,   // Pending
   AiOutlineCheckCircle,   // Approved
@@ -119,8 +120,9 @@ export default function StudentDashboard() {
           
 
 <div className="actions">
-  <button onClick={() => navigate("/new-request")}>
-    <AiOutlinePlus style={{ marginRight: 6 }} /> New Request
+  <button className="btn-new-request">
+    <AiOutlinePlus size={18} /> {/* professional plus icon */}
+    New Request
   </button>
 </div>
 

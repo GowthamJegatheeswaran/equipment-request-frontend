@@ -227,32 +227,43 @@
 }
 
 /* TABLE */
+/* Professional Table Card */
 .requests-table {
   width: 100%;
-  border-collapse: collapse;
-  background: white;
+  border-collapse: separate;
+  border-spacing: 0;
   margin-top: 15px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
-.requests-table th,
+.requests-table th {
+  background: #f3f4f6;  /* light gray header */
+  padding: 14px 12px;
+  text-align: left;
+  font-weight: 600;
+  color: #111827;
+  border-bottom: 1px solid #e5e7eb;
+}
+
 .requests-table td {
-  padding: 12px 10px;
-  text-align: center;
-  border-bottom: 1px solid #ddd;
+  padding: 12px 12px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 14px;
+  color: #374151;
+}
+
+.requests-table tbody tr:hover {
+  background: #f9fafb;
+  transition: background 0.2s ease;
 }
 
 /* STATUS */
 .requests-table tr:hover { background: #f3f4f6; }
 
-.status {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-weight: 600;
-}
 .pending {
   background: yellow;
 }
@@ -640,16 +651,27 @@ footer {
 }
 
 .status {
-  padding: 4px 8px;
-  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 12px;
   font-weight: 600;
-  text-align: center;
-  width: fit-content;
+  font-size: 13px;
 }
 
-.status.pending_lecturer_approval { background: #facc15; color: #111; }
-.status.rejected_by_lecturer { background: #dc2626; color: white; }
-.status.approved { background: #16a34a; color: white; }
+.status.pending_lecturer_approval {
+  background: #fef3c7;
+  color: #b45309;
+}
+.status.approved {
+  background: #d1fae5;
+  color: #047857;
+}
+.status.rejected_by_lecturer {
+  background: #fee2e2;
+  color: #b91c1c;
+}
 
 .requests-table th, .requests-table td {
   padding: 12px 10px;
@@ -660,3 +682,23 @@ footer {
 .requests-table tr:hover { background: #f3f4f6; }
 
 .status { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 6px; font-weight: 600; }
+
+
+/* Professional New Request Button with Icon */
+.btn-new-request {
+  background: #2563eb; /* topbar-blue color */
+  color: white;
+  font-weight: 600;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px; /* space between icon and text */
+}
+
+.btn-new-request:hover {
+  background: #1d4ed8; /* darker on hover */
+}
