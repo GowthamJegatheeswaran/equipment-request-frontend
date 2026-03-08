@@ -10,10 +10,9 @@ import {
   AiOutlineClockCircle,   // Pending
   AiOutlineCheckCircle,   // Approved
   AiOutlineCloseCircle,   // Rejected
-  AiOutlineFileText       // Total Requests
+  AiOutlineFileText,       // Total Requests
+  AiOutlineEye    
 } from "react-icons/ai"
-
-import { AiOutlineEye, AiOutlinePlus } from "react-icons/ai"
 import { AuthAPI } from "../api/api"
 
 export default function StudentDashboard() {
