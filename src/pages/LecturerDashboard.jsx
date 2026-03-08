@@ -109,8 +109,8 @@ export default function LecturerDashboard() {
 </div>
 
           {/* Quick Actions Horizontal */}
+           <h3>My Recent Requests</h3>
           <div className="actions">
-             <h3 style={{ marginTop: 24 }}>My Recent Requests</h3>
             <button className="btn-new-request" onClick={() => navigate("/lecturer-new-request")}>
               <AiOutlinePlus size={18} /> New Request
             </button>
