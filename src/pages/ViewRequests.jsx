@@ -145,16 +145,20 @@ export default function ViewRequests() {
         <td style={{ textAlign: "center" }}>{r.requestId}</td>
         <td>{r.labName || "-"}</td>
         <td>{r.lecturerName || "-"}</td>
-        <td className="items-column">
-          {Array.isArray(r.items) && r.items.length > 0
-            ? r.items
-                .map(
-                  (it) =>
-                    `${it.equipmentName || `Equipment #${it.equipmentId}`}: ${it.quantity}`
-                )
-                .join(", ")
-            : "-"}
-        </td>
+        {/* Items Column */}
+<td className="items-column">
+  {Array.isArray(r.items) && r.items.length > 0 ? (
+    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+      {r.items.map((it) => (
+        <div key={it.requestItemId}>
+          {it.equipmentName || `Equipment #${it.equipmentId}`}: {it.quantity}
+        </div>
+      ))}
+    </div>
+  ) : (
+    "-"
+  )}
+</td>
         <td style={{ textAlign: "center" }}>{r.fromDate || "-"}</td>
         <td style={{ textAlign: "center" }}>{r.toDate || "-"}</td>
 
