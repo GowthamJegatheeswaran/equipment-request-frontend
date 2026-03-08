@@ -152,20 +152,14 @@ export default function ViewRequests() {
   </thead>
   <tbody>
   {filtered.map((r) => (
-    <tr key={`${r.requestId}-${r?._item?.requestItemId}`}>
+    <tr key={r.requestId}>
       <td style={{ textAlign: "center" }}>{r.requestId}</td>
       <td>{r.labName || "-"}</td>
       <td>{r.lecturerName || "-"}</td>
 
-      {/* Items column: all items inline */}
+      {/* Items column: all items in one cell, comma separated */}
       <td className="items-column">
-        <ul>
-          {Array.isArray(r.items) && r.items.map((it, idx) => (
-            <li key={idx}>
-              {it.equipmentName || `Equipment #${it.equipmentId}`}: {it.quantity}
-            </li>
-          ))}
-        </ul>
+        {Array.isArray(r.items) && r.items.map((it) => `${it.equipmentName || `Equipment #${it.equipmentId}`}: ${it.quantity}`).join(", ")}
       </td>
 
       <td style={{ textAlign: "center" }}>{r.fromDate || "-"}</td>
