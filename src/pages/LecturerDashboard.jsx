@@ -1,21 +1,22 @@
-import { useEffect, useMemo, useState } from "react"
-import { useNavigate } from "react-router-dom"
+import "../styles/lecturerDashboard.css"
 import Sidebar from "../components/Sidebar"
 import Topbar from "../components/Topbar"
 import SummaryCard from "../components/SummaryCard"
-import { LecturerRequestAPI } from "../api/api"
-import "../styles/lecturerDashboard.css"
+import { useEffect, useMemo, useState } from "react"
+import { useNavigate } from "react-router-dom"
+import { LecturerRequestAPI, AuthAPI } from "../api/api"
+import { AiOutlineClockCircle, AiOutlineCheckCircle, AiOutlineCloseCircle, AiOutlineFileText } from "react-icons/ai"
 
 export default function LecturerDashboard() {
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [user, setUser] = useState(null)
+
   const [queue, setQueue] = useState([])
   const [myRows, setMyRows] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
-  const [lecturerName, setLecturerName] = useState("Lecturer")
 
-  // Load dashboard data
   const load = async () => {
     setError("")
     try {
@@ -23,8 +24,6 @@ export default function LecturerDashboard() {
       const [q, my] = await Promise.all([LecturerRequestAPI.queue(), LecturerRequestAPI.my()])
       setQueue(Array.isArray(q) ? q : [])
       setMyRows(Array.isArray(my) ? my : [])
-      // Set lecturer name from API if available
-      if (my?.[0]?.lecturerName) setLecturerName(my[0].lecturerName)
     } catch (e) {
       setError(e?.message || "Failed to load lecturer dashboard")
     } finally {
@@ -34,7 +33,17 @@ export default function LecturerDashboard() {
 
   useEffect(() => {
     load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    // Fetch lecturer info (like student dashboard)
+    const fetchUser = async () => {
+      try {
+        const me = await AuthAPI.me()
+        setUser(me)
+      } catch (err) {
+        console.error("Failed to fetch lecturer info", err)
+      }
+    }
+    fetchUser()
   }, [])
 
   const counts = useMemo(() => {
@@ -62,26 +71,22 @@ export default function LecturerDashboard() {
         <Topbar onMenuClick={() => setSidebarOpen(true)} />
 
         <div className="content">
-          {/* Welcome Heading */}
-          <h2 className="welcome">Welcome, {lecturerName}</h2>
+          <h2 className="welcome">Welcome, {user?.fullName || "Lecturer"}!</h2>
 
-          {error && <div className="error-message" style={{ color: "red", marginTop: 10 }}>{error}</div>}
+          {error && <div className="error-message">{error}</div>}
 
-          {/* Quick Summary */}
           <h3>Quick Summary</h3>
           <div className="summary-grid">
-            <SummaryCard title="Pending Applications" value={counts.pending} />
-            <SummaryCard title="My Total Requests" value={counts.totalMine} />
+            <SummaryCard title="Pending Applications" value={counts.pending} icon={<AiOutlineClockCircle size={28} />} />
+            <SummaryCard title="My Total Requests" value={counts.totalMine} icon={<AiOutlineFileText size={28} />} />
           </div>
 
-          {/* Quick Actions */}
           <h3>Quick Actions</h3>
           <div className="actions">
             <button onClick={() => navigate("/lecturer-new-request")}>New Requests</button>
             <button onClick={() => navigate("/lecturer-applications")}>Applications</button>
           </div>
 
-          {/* Recent Requests */}
           <h3>My Recent Requests</h3>
           <table className="requests-table">
             <thead>
@@ -95,22 +100,21 @@ export default function LecturerDashboard() {
             <tbody>
               {recentMine.map((r) => {
                 const p = itemsPreview(r)
+                const statusClass = String(r.status || "").toLowerCase()
                 return (
                   <tr key={r.requestId}>
                     <td>{p.text}</td>
                     <td style={{ textAlign: "center" }}>{p.qty}</td>
                     <td style={{ textAlign: "center" }}>{r.fromDate || "-"}</td>
                     <td style={{ textAlign: "center" }}>
-                      <span className={`status ${String(r.status || "").toLowerCase()}`}>{r.status || "-"}</span>
+                      <span className={`status ${statusClass}`}>{r.status || "-"}</span>
                     </td>
                   </tr>
                 )
               })}
               {recentMine.length === 0 && !loading && (
                 <tr>
-                  <td colSpan="4" style={{ textAlign: "center" }}>
-                    No requests yet
-                  </td>
+                  <td colSpan="4" style={{ textAlign: "center" }}>No requests yet</td>
                 </tr>
               )}
             </tbody>
