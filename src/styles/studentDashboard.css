@@ -104,42 +104,11 @@
 }
 
 /* SIDEBAR */
-.sidebar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 240px;
-  height: 100vh;
-  background: linear-gradient(to bottom, #0a1f44, #133c7a);
-  color: white;
-  padding: 20px;
-  overflow-y: auto;
-}
 
-.logo {
-  font-size: 18px;
-  margin-bottom: 30px;
-}
 
-.sidebar ul {
-  list-style: none;
-}
 
-.sidebar li {
-  padding: 12px;
-  margin-bottom: 10px;
-  cursor: pointer;
-  border-radius: 6px;
-}
 
-.sidebar li:hover,
-.sidebar .active {
-  background: rgba(255, 255, 255, 0.2);
-}
 
-.sidebar .bottom {
-  margin-top: 200px;
-}
 
 /* MAIN CONTENT */
 .main-content {
@@ -507,11 +476,8 @@ footer {
    SIDEBAR HEADER (Logo + Close ❌)
    - Aligns logo and close button
 ================================ */
-.sidebar-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
+
+
 
 /* ===============================
    SIDEBAR CLOSE BUTTON (❌)
@@ -532,13 +498,104 @@ footer {
    - Dark background when sidebar opens
    - Prevents clicking content behind
 ================================ */
-.sidebar-overlay {
-  display: none;              /* Hidden by default */
+
+/* SIDEBAR */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 240px;
+  height: 100vh;
+  background: linear-gradient(to bottom, #1a2533, #1c3b57); /* dark professional gradient */
+  color: #fff;
+  padding: 30px 20px;
+  overflow-y: auto;
+  box-shadow: 2px 0 12px rgba(0,0,0,0.2); /* subtle shadow */
+  border-right: 1px solid rgba(255,255,255,0.05);
+  transition: all 0.3s ease;
 }
 
-/* =================================================
-   MOBILE BEHAVIOR (Screens ≤ 768px)
-================================================= */
+/* Sidebar Header */
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 40px;
+}
+
+.sidebar-logo {
+  height: 40px;
+  width: auto;
+  border-radius: 6px;
+}
+
+.logo-text {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* Sidebar Menu */
+.sidebar-menu {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar-menu li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.sidebar-menu li:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.sidebar-menu li.active {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.sidebar-menu li .menu-icon {
+  font-size: 18px;
+}
+
+.sidebar-menu li .menu-label {
+  font-size: 15px;
+}
+
+/* Bottom links */
+.sidebar .bottom {
+  margin-top: 40px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Mobile overlay */
+.sidebar-overlay {
+  display: none;
+}
+.sidebar-overlay.show {
+  display: block;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 999;
+}
+
+/* Sidebar open animation (mobile) */
+.sidebar.open {
+  transform: translateX(0);
+  transition: transform 0.3s ease;
+}
+
 @media (max-width: 768px) {
 
   /* Show hamburger menu button in topbar */
@@ -546,37 +603,8 @@ footer {
     display: inline-block;
   }
 
-  /* ===============================
-     OVERLAY WHEN SIDEBAR IS OPEN
-  ================================ */
-  .sidebar-overlay {
-    position: fixed;
-    inset: 0;                 /* Covers entire screen */
-    background: rgba(0,0,0,0.5);
-    z-index: 999;
-    display: none;
-  }
 
-  /* Overlay visible when sidebar is open */
-  .sidebar-overlay.show {
-    display: block;
-  }
 
-  /* ===============================
-     SIDEBAR SLIDE-IN DRAWER
-  ================================ */
-  .sidebar {
-    transform: translateX(-110%);  /* Hidden off-screen */
-    transition: transform 0.25s ease;
-    z-index: 1000;
-  }
-
-  /* Sidebar visible when open */
-  .sidebar.open {
-    transform: translateX(0);
-  }
-
-  /* Show close (❌) button on mobile */
   .close-btn {
     display: inline-block;
   }
