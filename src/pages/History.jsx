@@ -31,16 +31,16 @@ export default function History() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Filter only returned/done items
   const history = useMemo(() => {
-    // History (item-wise): show returned items (waiting verify / verified / damaged)
-    const itemDone = new Set(["RETURN_REQUESTED", "RETURN_VERIFIED", "DAMAGED_REPORTED"])
+    const doneStatuses = new Set(["RETURN_REQUESTED", "RETURN_VERIFIED", "DAMAGED_REPORTED"])
     const flat = []
     for (const r of rows || []) {
       const items = Array.isArray(r?.items) ? r.items : []
       for (const it of items) {
-        const st = String(it?.itemStatus || "")
-        if (!itemDone.has(st)) continue
-        flat.push({ ...r, _item: it, _itemStatus: st })
+        if (doneStatuses.has(it?.itemStatus)) {
+          flat.push({ ...r, _item: it, _itemStatus: it.itemStatus })
+        }
       }
     }
     return flat.sort((a, b) => (b.requestId || 0) - (a.requestId || 0))
@@ -56,24 +56,30 @@ export default function History() {
     )
   }
 
+  // Map API status to CSS class for color
+  const getStatusClass = (status) => {
+    const map = {
+      REJECTED_BY_LECTURER: "rejected_by_lecturer",
+      APPROVED: "approved",
+      RETURN_REQUESTED: "returnrequested",
+      RETURN_VERIFIED: "returned",
+      DAMAGED_REPORTED: "rejected",
+      PENDING: "pending",
+      REJECTED: "rejected",
+    }
+    return map[status?.trim()] || "status-default"
+  }
+
   return (
     <div className="dashboard-container">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-
       <div className="main-content">
         <Topbar onMenuClick={() => setSidebarOpen(true)} />
 
         <div className="content">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <h2>{title} Request History</h2>
-            <button className="btn-submit" type="button" onClick={load} disabled={loading}>
-              {loading ? "Loading..." : "Refresh"}
-            </button>
-          </div>
-
           {error && <div className="error-message" style={{ color: "red", marginBottom: 10 }}>{error}</div>}
 
-          <table className="requests-table">
+          <table className="requests-table view-requests-table">
             <thead>
               <tr>
                 <th>Request_ID</th>
@@ -96,7 +102,9 @@ export default function History() {
                   <td style={{ textAlign: "center" }}>{r.fromDate || "-"}</td>
                   <td style={{ textAlign: "center" }}>{r.toDate || "-"}</td>
                   <td style={{ textAlign: "center" }}>
-                    <span className={`status ${String(r._itemStatus || "").toLowerCase()}`}>{r._itemStatus || "-"}</span>
+                    <span className={`status ${getStatusClass(r._itemStatus)}`}>
+                      {r._itemStatus || "-"}
+                    </span>
                   </td>
                 </tr>
               ))}
@@ -111,10 +119,6 @@ export default function History() {
             </tbody>
           </table>
         </div>
-
-        <footer>
-          Faculty of Engineering | University of Jaffna <br />© Copyright 2026. All Rights Reserved - ERS
-        </footer>
       </div>
     </div>
   )
