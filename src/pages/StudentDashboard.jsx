@@ -69,13 +69,6 @@ export default function StudentDashboard() {
         <div className="content">
           <h2 className="welcome">Student Dashboard</h2>
 
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <h3 style={{ margin: 0 }}>Quick Summary Card</h3>
-            <button className="btn-submit" type="button" onClick={load} disabled={loading}>
-              {loading ? "Loading..." : "Refresh"}
-            </button>
-          </div>
-
           {error && <div className="error-message">{error}</div>}
 
           <div className="summary-grid" style={{ marginTop: 12 }}>
@@ -113,11 +106,8 @@ export default function StudentDashboard() {
           
 
 <div className="actions">
-  <button onClick={() => navigate("/view-requests")}>
-    <AiOutlineEye style={{ marginRight: 6 }} /> View Requests
-  </button>
   <button onClick={() => navigate("/new-request")}>
-    <AiOutlinePlus style={{ marginRight: 6 }} /> New Requests
+    <AiOutlinePlus style={{ marginRight: 6 }} /> New Request
   </button>
 </div>
 
