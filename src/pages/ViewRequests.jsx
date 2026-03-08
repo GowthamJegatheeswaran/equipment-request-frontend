@@ -93,7 +93,7 @@ export default function ViewRequests() {
         </button>
       )
     }
-    return <span style={{ color: "#777" }}>—</span>
+    return <span style={{ color: "#777" }}></span>
   }
 
   // Build status filter options from data
