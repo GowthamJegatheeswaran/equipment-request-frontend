@@ -29,7 +29,6 @@ export default function LecturerApplications() {
   }, [])
 
   const pending = useMemo(() => {
-    // Flatten: 1 row = 1 equipment item (pending lecturer approval)
     const out = []
     for (const r of rows || []) {
       const items = Array.isArray(r?.items) ? r.items : []
@@ -88,12 +87,7 @@ export default function LecturerApplications() {
         <Topbar onMenuClick={() => setSidebarOpen(true)} />
 
         <div className="content">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <h2 style={{ marginBottom: "15px" }}>Applications</h2>
-            <button className="btn-submit" type="button" onClick={load} disabled={loading}>
-              {loading ? "Loading..." : "Refresh"}
-            </button>
-          </div>
+          <h2 style={{ marginBottom: "15px" }}>Applications</h2>
 
           {error && <div className="error-message" style={{ color: "red", marginBottom: 10 }}>{error}</div>}
 
@@ -140,10 +134,6 @@ export default function LecturerApplications() {
             </tbody>
           </table>
         </div>
-
-        <footer>
-          Faculty of Engineering | University of Jaffna <br />© Copyright 2026. All Rights Reserved - ERS
-        </footer>
       </div>
     </div>
   )
