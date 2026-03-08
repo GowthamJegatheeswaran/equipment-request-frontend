@@ -116,12 +116,7 @@ export default function ViewRequests() {
         <Topbar onMenuClick={() => setSidebarOpen(true)} />
 
         <div className="content">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <h2 style={{ marginBottom: "15px" }}>My Requests</h2>
-            <button className="btn-submit" type="button" onClick={load} disabled={loading}>
-              {loading ? "Loading..." : "Refresh"}
-            </button>
-          </div>
+          <h2 style={{ marginBottom: "15px" }}>My Requests</h2>
 
           {error && <div className="error-message" style={{ color: "red", marginBottom: 10 }}>{error}</div>}
 
@@ -182,10 +177,6 @@ export default function ViewRequests() {
             </tbody>
           </table>
         </div>
-
-        <footer>
-          Faculty of Engineering | University of Jaffna <br />© Copyright 2026. All Rights Reserved - ERS
-        </footer>
       </div>
     </div>
   )
