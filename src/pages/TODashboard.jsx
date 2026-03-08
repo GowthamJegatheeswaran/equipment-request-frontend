@@ -1,7 +1,7 @@
 import "../styles/studentDashboard.css"
 import Sidebar from "../components/Sidebar"
 import Topbar from "../components/Topbar"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { ToRequestAPI } from "../api/api"
 
@@ -25,10 +25,7 @@ export default function TODashboard() {
     }
   }
 
-  useEffect(() => {
-    load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  useEffect(() => { load() }, [])
 
   const assigned = useMemo(() => {
     const active = new Set([
@@ -38,8 +35,7 @@ export default function TODashboard() {
       "ISSUED_CONFIRMED",
       "RETURNED_PENDING_TO_VERIFY",
     ])
-    return [...rows]
-      .filter((r) => active.has(String(r.status)))
+    return [...rows].filter(r => active.has(String(r.status)))
       .sort((a, b) => (b.requestId || 0) - (a.requestId || 0))
       .slice(0, 6)
   }, [rows])
@@ -54,36 +50,32 @@ export default function TODashboard() {
         <Topbar onMenuClick={() => setSidebarOpen(true)} />
 
         <div className="content">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <h2 className="welcome" style={{ margin: 0 }}>TO Dashboard</h2>
-            <button className="btn-submit" type="button" onClick={load} disabled={loading}>
-              {loading ? "Loading..." : "Refresh"}
-            </button>
-          </div>
+          <h2 className="welcome">TO Dashboard</h2>
+          {error && <div className="error-message" style={{ color: "red", marginBottom: 10 }}>{error}</div>}
 
-          {error && <div className="error-message" style={{ color: "red", marginTop: 10 }}>{error}</div>}
-
+          {/* Quick Actions */}
           <h3>Quick Actions</h3>
           <div className="actions">
-            <button onClick={() => navigate("/to-approval-requests")}>Approval requests</button>
+            <button onClick={() => navigate("/to-view-requests")}>View Requests</button>
             <button onClick={() => navigate("/to-history")}>History</button>
             <button onClick={() => navigate("/to-purchase-new")}>New Purchase</button>
           </div>
 
+          {/* Assigned Requests */}
           <h3>Assigned Request List</h3>
-          <table className="requests-table">
+          <table className="requests-table view-requests-table">
             <thead>
               <tr>
                 <th>Request_ID</th>
                 <th>Requester</th>
                 <th>Lab</th>
                 <th style={{ textAlign: "center" }}>Status</th>
-                <th style={{ textAlign: "center" }}>Due_Date</th>
+                <th style={{ textAlign: "center" }}>Due Date</th>
               </tr>
             </thead>
             <tbody>
-              {assigned.map((r) => (
-                <tr key={r.requestId}>
+              {assigned.map(r => (
+                <tr key={r.requestId} onClick={() => navigate(`/to-view-requests/${r.requestId}`)} style={{ cursor: "pointer" }}>
                   <td style={{ textAlign: "center" }}>{r.requestId}</td>
                   <td>{requesterText(r)}</td>
                   <td>{r.labName || "-"}</td>
@@ -93,21 +85,14 @@ export default function TODashboard() {
                   <td style={{ textAlign: "center" }}>{r.toDate || "-"}</td>
                 </tr>
               ))}
-
               {assigned.length === 0 && !loading && (
                 <tr>
-                  <td colSpan="5" style={{ textAlign: "center" }}>
-                    No assigned requests
-                  </td>
+                  <td colSpan="5" style={{ textAlign: "center" }}>No assigned requests</td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
-
-        <footer>
-          Faculty of Engineering | University of Jaffna <br />© Copyright 2026. All Rights Reserved - ERS
-        </footer>
       </div>
     </div>
   )
