@@ -3,7 +3,7 @@ import Sidebar from "../components/Sidebar"
 import Topbar from "../components/Topbar"
 import { useEffect, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { ToRequestAPI } from "../api/api"
+import { ToRequestAPI, AuthAPI } from "../api/api" // import AuthAPI to get TO name
 
 export default function TODashboard() {
   const navigate = useNavigate()
@@ -11,7 +11,9 @@ export default function TODashboard() {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [user, setUser] = useState(null) // store TO user info
 
+  // Load requests
   const load = async () => {
     setError("")
     try {
@@ -25,8 +27,18 @@ export default function TODashboard() {
     }
   }
 
+  // Fetch requests and user info on mount
   useEffect(() => {
     load()
+    const fetchUser = async () => {
+      try {
+        const me = await AuthAPI.me()
+        setUser(me)
+      } catch (err) {
+        console.error("Failed to fetch user", err)
+      }
+    }
+    fetchUser()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -49,17 +61,14 @@ export default function TODashboard() {
   return (
     <div className="dashboard-container">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-
       <div className="main-content">
         <Topbar onMenuClick={() => setSidebarOpen(true)} />
 
         <div className="content">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <h2 className="welcome" style={{ margin: 0 }}>TO Dashboard</h2>
-            <button className="btn-submit" type="button" onClick={load} disabled={loading}>
-              {loading ? "Loading..." : "Refresh"}
-            </button>
-          </div>
+          {/* Welcome Header with TO name */}
+          <h2 className="welcome">
+            Welcome, {user?.fullName || "TO"}!
+          </h2>
 
           {error && <div className="error-message" style={{ color: "red", marginTop: 10 }}>{error}</div>}
 
@@ -104,10 +113,6 @@ export default function TODashboard() {
             </tbody>
           </table>
         </div>
-
-        <footer>
-          Faculty of Engineering | University of Jaffna <br />© Copyright 2026. All Rights Reserved - ERS
-        </footer>
       </div>
     </div>
   )
