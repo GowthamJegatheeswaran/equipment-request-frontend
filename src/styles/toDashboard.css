@@ -153,13 +153,3 @@
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-/* Force uniform width and alignment for Item column */
-.requests-table th:nth-child(4),
-.requests-table td:nth-child(4) {
-  min-width: 180px;          /* minimum width for item names */
-  max-width: 220px;          /* prevent stretching too much */
-  overflow: hidden;          /* hide overflow if text too long */
-  text-overflow: ellipsis;   /* show ... for long names */
-  white-space: nowrap;       /* prevent wrapping */
-  text-align: center;       
-}
