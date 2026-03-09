@@ -13,6 +13,19 @@ export default function TODashboard() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [user, setUser] = useState(null)
+  const statusMap = {
+  PENDING_LECTURER_APPROVAL: "pending_lecturer_approval",
+  APPROVED_BY_LECTURER: "approved_by_lecturer",
+  REJECTED_BY_LECTURER: "rejected_by_lecturer",
+  RETURN_REQUESTED: "returnrequested",
+  RETURNED_PENDING_TO_VERIFY: "returned_pending_to_verify",
+  RETURN_VERIFIED: "return_verified",
+  ISSUED_PENDING_STUDENT_ACCEPT: "issued_pending_student_accept",
+  ISSUED_CONFIRMED: "issued_confirmed",
+  TO_PROCESSING: "to_processing",
+  WAITING_TO_ISSUE: "waiting_to_issue",
+  default: "default",
+};
 
   // Load requests
   const load = async () => {
@@ -103,7 +116,7 @@ export default function TODashboard() {
             <tbody>
   {assigned.map((r) => {
     const it = r._item; // flatten each request per equipment
-    const statusClass = String(it.itemStatus || "default").toLowerCase(); // map itemStatus to CSS class
+   const statusClass = statusMap[it.itemStatus] || statusMap.default; // map itemStatus to CSS class
     return (
       <tr key={`${r.requestId}-${it.requestItemId}`}>
         <td>{r.requestId}</td>
