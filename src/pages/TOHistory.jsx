@@ -85,19 +85,19 @@ export default function TOHistory() {
       <tbody>
         {data.map(r => (
           <tr key={`${r.requestId}-${r._item.requestItemId}`}>
-            <td style={{ textAlign: "center" }}>{r.requestId}</td>
-            <td>{requesterText(r)}</td>
-            <td style={{ textAlign: "center" }}>{r.requesterRole || "-"}</td>
-            <td>{r.labName || "-"}</td>
+            <td className="single-line-cell">{r.requestId}</td>
+            <td className="single-line-cell">{requesterText(r)}</td>
+            <td className="single-line-cell">{r.requesterRole || "-"}</td>
+            <td className="single-line-cell">{r.labName || "-"}</td>
             <td>{r._item.equipmentName || `Equipment #${r._item.equipmentId}`} × {r._item.quantity}</td>
-            <td style={{ textAlign: "center" }}>{r.fromDate || "-"}</td>
-            <td style={{ textAlign: "center" }}>{r.toDate || "-"}</td>
+            <td className="single-line-cell">{r.fromDate || "-"}</td>
+            <td className="single-line-cell">{r.toDate || "-"}</td>
             <td>
               <span className={`status ${String(r._item.itemStatus || "").toLowerCase()}`}>
                 {r._item.itemStatus || "-"}
               </span>
             </td>
-            <td style={{ textAlign: "center" }}>
+            <td className="single-line-cell">
               {canVerify(r._item.itemStatus) ? (
                 <div className="to-actions" style={{ justifyContent: "center" }}>
                   <button className="btn-submit" onClick={() => actVerify(r._item.requestItemId, false)}>Verify OK</button>
