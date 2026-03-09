@@ -122,3 +122,29 @@
 
 /* Fallback unknown status */
 .status-default { background: #6b7280; color: white; }
+
+
+/* Quick action buttons like student dashboard */
+.to-actions {
+  display: flex;
+  gap: 12px;
+  margin: 15px 0;
+}
+
+.to-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px; /* space between icon and text */
+  padding: 10px 18px;
+  border: 1px solid #d1d5db; /* subtle border */
+  border-radius: 8px;
+  background: #f3f4f6;         /* same as student dashboard */
+  color: #111827;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.to-actions button:hover {
+  background: #e5e7eb;         /* slightly darker on hover */
+}

@@ -1,3 +1,4 @@
+import { AiOutlineFileText, AiOutlineClockCircle, AiOutlinePlus } from "react-icons/ai"
 import "../styles/toDashboard.css"
 import Sidebar from "../components/Sidebar"
 import Topbar from "../components/Topbar"
@@ -71,11 +72,17 @@ export default function TODashboard() {
           {error && <div className="error-message" style={{ color: "red", marginTop: 10 }}>{error}</div>}
 
           <h3>Quick Actions</h3>
-          <div className="actions">
-            <button onClick={() => navigate("/to-approval-requests")}>Approval requests</button>
-            <button onClick={() => navigate("/to-history")}>History</button>
-            <button onClick={() => navigate("/to-purchase-new")}>New Purchase</button>
-          </div>
+<div className="to-actions">
+  <button onClick={() => navigate("/to-approval-requests")}>
+    <AiOutlineFileText size={18} /> Approval requests
+  </button>
+  <button onClick={() => navigate("/to-history")}>
+    <AiOutlineClockCircle size={18} /> History
+  </button>
+  <button onClick={() => navigate("/to-purchase-new")}>
+    <AiOutlinePlus size={18} /> New Purchase
+  </button>
+</div>
 
           <h3>Assigned Request List</h3>
           <table className="requests-table">
