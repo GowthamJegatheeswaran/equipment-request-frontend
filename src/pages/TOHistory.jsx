@@ -74,43 +74,40 @@ export default function TOHistory() {
     const bgColor = statusColorMap[item.itemStatus] || "#2563eb";
 
     return (
-      <div key={`${r.requestId}-${item.requestItemId}`} className="history-card">
-        <div className="history-columns">
-          {/* Left column */}
-          <div className="history-left">
-            <div><strong>Request ID:</strong> {r.requestId}</div>
-            <div><strong>Requester:</strong> {requesterText(r)}</div>
-            <div><strong>From:</strong> {r.fromDate || "-"}</div>
-            <div><strong>To:</strong> {r.toDate || "-"}</div>
-          </div>
-
-          {/* Right column */}
-          <div className="history-right">
-            <div><strong>Role:</strong> {r.requesterRole || "-"}</div>
-            <div><strong>Lab:</strong> {r.labName || "-"}</div>
-            <div><strong>Item:</strong> {item.equipmentName || `Equipment #${item.equipmentId}`} × {item.quantity}</div>
-            <div>
-              <strong>Status:</strong>{" "}
-              <span
-                className="status"
-                style={{
-                  backgroundColor: bgColor,
-                  color: item.itemStatus === "RETURN_REQUESTED" ? "#111" : "white",
-                }}
-              >
-                {item.itemStatus || "-"}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {canVerify(item.itemStatus) && (
-          <div className="history-actions">
-            <button className="btn-submit" onClick={() => actVerify(item.requestItemId, false)}>Verify OK</button>
-            <button className="btn-cancel" onClick={() => actVerify(item.requestItemId, true)}>Mark Damaged</button>
-          </div>
-        )}
+    <div className="history-card" key={`${r.requestId}-${item.requestItemId}`}>
+  <div className="history-columns">
+    <div className="history-left">
+      <div><strong>Request ID:</strong> {r.requestId}</div>
+      <div><strong>Requester:</strong> {requesterText(r)}</div>
+      <div><strong>From:</strong> {r.fromDate || "-"}</div>
+      <div><strong>To:</strong> {r.toDate || "-"}</div>
+    </div>
+    <div className="history-right">
+      <div><strong>Role:</strong> {r.requesterRole || "-"}</div>
+      <div><strong>Lab:</strong> {r.labName || "-"}</div>
+      <div><strong>Item:</strong> {item.equipmentName || `Equipment #${item.equipmentId}`} × {item.quantity}</div>
+      <div>
+        <strong>Status:</strong>{" "}
+        <span
+          className="status"
+          style={{
+            backgroundColor: statusColorMap[item.itemStatus] || "#2563eb",
+            color: item.itemStatus === "RETURN_REQUESTED" ? "#111" : "white",
+          }}
+        >
+          {item.itemStatus || "-"}
+        </span>
       </div>
+    </div>
+  </div>
+
+  {canVerify(item.itemStatus) && (
+    <div className="history-actions">
+      <button className="btn-submit" onClick={() => actVerify(item.requestItemId, false)}>Verify OK</button>
+      <button className="btn-cancel" onClick={() => actVerify(item.requestItemId, true)}>Mark Damaged</button>
+    </div>
+  )}
+</div>
     );
   };
 
