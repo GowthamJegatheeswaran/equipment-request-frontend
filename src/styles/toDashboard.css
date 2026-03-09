@@ -152,3 +152,21 @@
   transform: translateY(-1px);
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
+
+/* Ensure all table columns have uniform width and vertical alignment */
+.requests-table th,
+.requests-table td {
+  padding: 14px 16px;
+  text-align: center;       /* center all cells */
+  vertical-align: middle;   /* align content vertically */
+  white-space: nowrap;      /* prevent wrapping for item names */
+}
+
+/* Specifically fix the Item column to match the rest */
+.requests-table th:nth-child(4),
+.requests-table td:nth-child(4) {
+  min-width: 180px;         /* adjust as needed for equipment names */
+  max-width: 220px;         /* optional: prevent it from stretching too much */
+  overflow: hidden;         /* hide overflow if text is too long */
+  text-overflow: ellipsis;  /* show ... for long equipment names */
+}
