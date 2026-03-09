@@ -133,11 +133,7 @@
 }
 
 /* Ensure text readability on light yellow/orange */
-.status.pending_lecturer_approval,
-.status.pending,
-.status.returnrequested {
-  color: #111827;
-}
+
 
 /* Make Items column left-aligned and flexible */
 .requests-table td:nth-child(4) div {
@@ -146,7 +142,15 @@
 }
 
 /* Status pills with full coverage */
-.status.pending_lecturer_approval { background: #f59e0b; color: #111; }
+.status.pending_lecturer_approval,
+.status.pending,
+.status.returnrequested,
+.status.returned_pending_to_verify {
+  color: #111827;
+}
+
+/* Lab Technical Officer workflow statuses */
+.status.pending_lecturer_approval { background: #f59e0b; }
 .status.approved { background: #16a34a; }
 .status.rejected_by_lecturer { background: #dc2626; }
 .status.pending { background: #fbbf24; }
@@ -160,9 +164,11 @@
 .status.issued_pending_student_accept { background: #2563eb; }
 .status.issued_confirmed { background: #2ecc71; }
 .status.returned_pending_to_verify { background: #f97316; }
+.status.waiting_to_issue { background: #2563eb; } /* added missing */
+.status.return_verify { background: #f97316; }   /* added missing */
 
 /* Fallback for unknown status */
-.status-default { background: #6b7280; color: white; }
+.status-default { background: #6b7280; color: white;}
 
 /* Items column stacked */
 .requests-table td div {
