@@ -25,7 +25,23 @@
 /* Table row actions buttons (Issue / Wait / Verify / Mark Damaged) */
 .to-actions {
   display: flex;
-  gap: 12px;
+  gap: 8px;          /* horizontal spacing between buttons */
+  justify-content: center;
+}
+
+.to-actions button.small {
+  padding: 4px 8px;  /* small, professional size */
+  font-size: 12px;
+  border-radius: 4px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;          /* space between icon and text */
+}
+
+.to-actions button.small .icon {
+  display: inline-flex;
+  align-items: center;
 }
 
 .to-actions button {
