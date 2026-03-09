@@ -32,10 +32,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;              /* space between icon and text */
-  padding: 12px 22px;     /* increase button size */
-  min-width: 80px;        /* ensure a minimum width */
-  font-size: 14px;        /* slightly bigger text */
+  gap: 8px;
+  padding: 12px 22px;  /* bigger buttons */
+  min-width: 80px;
+  font-size: 14px;
   border: 1px solid #d1d5db;
   border-radius: 8px;
   background: #f3f4f6;
