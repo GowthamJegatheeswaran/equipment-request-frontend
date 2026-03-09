@@ -3,7 +3,7 @@ import Sidebar from "../components/Sidebar"
 import Topbar from "../components/Topbar"
 import { useEffect, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { ToRequestAPI, AuthAPI } from "../api/api" // import AuthAPI to get TO name
+import { ToRequestAPI, AuthAPI } from "../api/api" // AuthAPI to fetch TO user info
 
 export default function TODashboard() {
   const navigate = useNavigate()
@@ -11,7 +11,7 @@ export default function TODashboard() {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
-  const [user, setUser] = useState(null) // store TO user info
+  const [user, setUser] = useState(null) // TO user info
 
   // Load requests
   const load = async () => {
@@ -27,7 +27,7 @@ export default function TODashboard() {
     }
   }
 
-  // Fetch requests and user info on mount
+  // Fetch requests and TO info on mount
   useEffect(() => {
     load()
     const fetchUser = async () => {
@@ -65,10 +65,8 @@ export default function TODashboard() {
         <Topbar onMenuClick={() => setSidebarOpen(true)} />
 
         <div className="content">
-          {/* Welcome Header with TO name */}
-          <h2 className="welcome">
-            Welcome, {user?.fullName || "TO"}!
-          </h2>
+          {/* Welcome header with TO name */}
+          <h2 className="welcome">Welcome, {user?.fullName || "Lab Technical Officer"}!</h2>
 
           {error && <div className="error-message" style={{ color: "red", marginTop: 10 }}>{error}</div>}
 
@@ -97,7 +95,9 @@ export default function TODashboard() {
                   <td>{requesterText(r)}</td>
                   <td>{r.labName || "-"}</td>
                   <td style={{ textAlign: "center" }}>
-                    <span className={`status ${String(r.status || "").toLowerCase()}`}>{r.status || "-"}</span>
+                    <span className={`status ${String(r.status || "").toLowerCase()}`}>
+                      {r.status || "-"}
+                    </span>
                   </td>
                   <td style={{ textAlign: "center" }}>{r.toDate || "-"}</td>
                 </tr>
