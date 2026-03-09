@@ -94,9 +94,9 @@ export default function TODashboard() {
                 <th style={{ textAlign: "center" }}>Due_Date</th>
               </tr>
             </thead>
-            <tbody>
+<tbody>
   {sorted.map((r) => {
-    const it = r._item;
+    const it = r._item; // each individual equipment item
     const statusClass = String(it?.itemStatus || "").toLowerCase();
     return (
       <tr key={`${r.requestId}-${it.requestItemId}`}>
