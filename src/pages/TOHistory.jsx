@@ -28,17 +28,17 @@ export default function TOHistory() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // One row per request, items grouped inside
   const history = useMemo(() => {
     const itemDone = new Set(["RETURN_REQUESTED", "RETURN_VERIFIED", "DAMAGED_REPORTED"])
-    const flat = []
+    const grouped = []
     for (const r of rows || []) {
       const items = Array.isArray(r?.items) ? r.items : []
-      for (const it of items) {
-        if (!itemDone.has(String(it?.itemStatus || ""))) continue
-        flat.push({ ...r, _item: it, _itemStatus: String(it?.itemStatus || "") })
-      }
+      const doneItems = items.filter(it => itemDone.has(String(it?.itemStatus || "")))
+      if (doneItems.length === 0) continue
+      grouped.push({ ...r, _items: doneItems })
     }
-    return flat.sort((a, b) => (b.requestId || 0) - (a.requestId || 0))
+    return grouped.sort((a, b) => (b.requestId || 0) - (a.requestId || 0))
   }, [rows])
 
   const historyStudentInstructor = useMemo(() =>
@@ -51,6 +51,53 @@ export default function TOHistory() {
   const historyLecturer = useMemo(() =>
     history.filter((r) => String(r.requesterRole || "").toUpperCase() === "LECTURER"), [history]
   )
+
+  const requesterText = (r) => r.requesterRegNo || r.requesterFullName || "-"
+
+  const renderItems = (r) => {
+    const items = r?._items
+    if (!items || items.length === 0) return <span style={{ color: "#777" }}>—</span>
+    return (
+      <div className="items-cell">
+        {items.map((it, i) => (
+          <span key={it?.requestItemId ?? i}>
+            {it.equipmentName || `Equipment #${it.equipmentId}`} × {it.quantity ?? "-"}
+          </span>
+        ))}
+      </div>
+    )
+  }
+
+  const renderStatus = (r) => {
+    const items = r?._items || []
+    const unique = [...new Set(items.map(it => String(it?.itemStatus || "")))]
+    return (
+      <div className="items-cell">
+        {unique.map((s, i) => (
+          <span key={i} className={`status ${s.toLowerCase()}`}>{s || "-"}</span>
+        ))}
+      </div>
+    )
+  }
+
+  const renderVerify = (r) => {
+    const items = r?._items || []
+    const verifiable = items.filter(it => String(it?.itemStatus || "") === "RETURN_REQUESTED")
+    if (verifiable.length === 0) return <span style={{ color: "#777" }}>—</span>
+    return (
+      <div className="items-cell">
+        {verifiable.map((it) => (
+          <div key={it.requestItemId} className="verify-group">
+            <span className="verify-label">{it.equipmentName || `#${it.equipmentId}`}</span>
+            <div className="to-actions" style={{ justifyContent: "center" }}>
+              <button className="btn-submit" type="button" onClick={() => actVerify(it.requestItemId, false)}>Verify OK</button>
+              <button className="btn-cancel" type="button" onClick={() => actVerify(it.requestItemId, true)}>Mark Damaged</button>
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
 
   const actVerify = async (requestItemId, damaged) => {
     setError("")
@@ -70,32 +117,21 @@ export default function TOHistory() {
           <th>Requester</th>
           <th>Role</th>
           <th>Lab</th>
-          <th>Item</th>
+          <th>Items</th>
           <th>Status</th>
           <th>Verify</th>
         </tr>
       </thead>
       <tbody>
-        {data.map((r, idx) => (
-          <tr key={`${keyPrefix}${r.requestId}-${r._item?.requestItemId ?? idx}`}>
-            <td>{r.requestId}</td>
-            <td>{r.requesterRegNo || r.requesterFullName || "-"}</td>
-            <td>{r.requesterRole || "-"}</td>
-            <td>{r.labName || "-"}</td>
-            <td>{r._item?.equipmentName || `Equipment #${r._item?.equipmentId}`} × {r._item?.quantity ?? "-"}</td>
-            <td>
-              <span className={`status ${r._itemStatus.toLowerCase()}`}>
-                {r._itemStatus || "-"}
-              </span>
-            </td>
-            <td>
-              {r._itemStatus === "RETURN_REQUESTED" ? (
-                <div className="to-actions" style={{ justifyContent: "center" }}>
-                  <button className="btn-submit" type="button" onClick={() => actVerify(r._item?.requestItemId, false)}>Verify OK</button>
-                  <button className="btn-cancel" type="button" onClick={() => actVerify(r._item?.requestItemId, true)}>Mark Damaged</button>
-                </div>
-              ) : <span style={{ color: "#777" }}>—</span>}
-            </td>
+        {data.map((r) => (
+          <tr key={`${keyPrefix}${r.requestId}`}>
+            <td><div className="items-cell">{r.requestId}</div></td>
+            <td><div className="items-cell">{requesterText(r)}</div></td>
+            <td><div className="items-cell">{r.requesterRole || "-"}</div></td>
+            <td><div className="items-cell">{r.labName || "-"}</div></td>
+            <td>{renderItems(r)}</td>
+            <td>{renderStatus(r)}</td>
+            <td>{renderVerify(r)}</td>
           </tr>
         ))}
         {data.length === 0 && !loading && (
@@ -114,8 +150,10 @@ export default function TOHistory() {
         <Topbar onMenuClick={() => setSidebarOpen(true)} />
         <div className="content">
           {error && <div className="error-message" style={{ color: "red", marginBottom: 10 }}>{error}</div>}
+
           <h3 style={{ marginTop: 12, marginBottom: 10 }}>Student/Instructor History</h3>
           {renderTable(historyStudentInstructor, "No returned records")}
+
           <h3 style={{ marginTop: 22, marginBottom: 10 }}>Lecturer History</h3>
           {renderTable(historyLecturer, "No lecturer records", "L-")}
         </div>
