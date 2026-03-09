@@ -22,7 +22,6 @@
 }
 
 /* Quick action buttons (table row actions) */
-/* Table row actions buttons (Issue / Wait / Verify / Mark Damaged) */
 .to-actions {
   display: flex;
   gap: 12px;
@@ -44,33 +43,28 @@
   transition: all 0.2s ease;
 }
 
-.requests-table td {
-  text-align: center;  /* all columns aligned */
-}
-
 .to-actions button:hover {
   background: #e5e7eb;
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
-/* Requests table */
 .requests-table {
   width: 100%;
-  border-collapse: collapse; /* standard table layout */
+  border-collapse: collapse;
   margin-top: 15px;
   background: #fff;
   border-radius: 12px;
   font-size: 14px;
 }
 
-.requests-table th, 
+.requests-table th,
 .requests-table td {
   padding: 14px 16px;
   border-bottom: 1px solid #e5e7eb;
   font-size: 14px;
   color: #374151;
-  text-align: center; /* all columns same alignment */
+  text-align: center;
 }
 
 .requests-table th {
@@ -82,9 +76,6 @@
   background: #f9fafb;
   box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
 }
-
-/* --- REMOVED ITEMS COLUMN STACKING --- */
-/* The previous td:nth-child(4) flex/column/gap block is removed */
 
 /* Status pills */
 .status {
@@ -98,45 +89,34 @@
   color: white;
 }
 
-/* Ensure readability on light colors */
-.status.pending_lecturer_approval,
-.status.pending,
-.status.returnrequested,
-.status.returned_pending_to_verify {
-  color: #111827;
-}
-
-/* All LTO statuses */
-.status.pending_lecturer_approval { background: #f59e0b; }
-.status.approved { background: #16a34a; }
-.status.rejected_by_lecturer { background: #dc2626; }
-.status.pending { background: #fbbf24; }
-.status.rejected { background: #e74c3c; }
-.status.issued { background: #2563eb; }
-.status.accepted { background: #2ecc71; }
-.status.returnrequested { background: #f97316; }
-.status.returned { background: #16a34a; }
-.status.approved_by_lecturer { background: #16a34a; }
-.status.to_processing { background: #2563eb; }
-.status.issued_pending_student_accept { background: #2563eb; }
-.status.issued_confirmed { background: #2ecc71; }
-.status.returned_pending_to_verify { background: #f97316; }
-.status.waiting_to_issue { background: #2563eb; }
+/* Status colors: exact lowercase names from API */
+.status.pending_lecturer_approval { background: #f59e0b; color: #111827; }
+.status.approved_by_lecturer { background: #16a34a; color: white; }
+.status.to_processing { background: #2563eb; color: white; }
+.status.issued_pending_student_accept { background: #2563eb; color: white; }
+.status.issued_confirmed { background: #2ecc71; color: white; }
+.status.returned_pending_to_verify { background: #f97316; color: #111827; }
 .status.return_verified { background: #6b7280; color: white; }
+.status.waiting_to_issue { background: #2563eb; color: white; }
+.status.returnrequested { background: #f97316; color: #111827; }
+.status.approved { background: #16a34a; color: white; }
+.status.rejected_by_lecturer { background: #dc2626; color: white; }
+.status.rejected { background: #e74c3c; color: white; }
+.status.pending { background: #fbbf24; color: #111827; }
 .status.default { background: #6b7280; color: white; }
 
 /* Dashboard Quick Actions (top buttons) */
 .dashboard-quick-actions {
   display: flex;
   align-items: center;
-  gap: 16px; /* horizontal space between buttons */
+  gap: 16px;
   margin-bottom: 20px;
 }
 
 .dashboard-quick-actions button {
   display: inline-flex;
   align-items: center;
-  gap: 6px; /* space between icon and text */
+  gap: 6px;
   padding: 10px 18px;
   border-radius: 8px;
   border: 1px solid #d1d5db;
