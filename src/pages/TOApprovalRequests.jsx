@@ -134,7 +134,7 @@ export default function TOApprovalRequests() {
                         {it.itemStatus || "-"}
                       </span>
                     </td>
-                    <td>
+  <td>
   {(canIssue(it.itemStatus) || canVerifyReturn(it.itemStatus)) ? (
     <div className="to-actions-horizontal">
       {canIssue(it.itemStatus) && (

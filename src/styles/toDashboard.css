@@ -32,7 +32,7 @@
 .to-actions-horizontal {
   display: flex;
   gap: 8px;         /* horizontal spacing between buttons */
-  justify-content: center;
+  justify-content: flex-start; /* align left inside cell */
 }
 
 .to-actions-horizontal button.small {
@@ -42,7 +42,7 @@
   flex: none;        /* prevent stretching */
   display: inline-flex;
   align-items: center;
-  gap: 4px;          /* icon + text spacing */
+  gap: 4px;          /* space between icon and text */
 }
 
 .to-actions button.small {
