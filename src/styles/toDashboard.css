@@ -105,30 +105,10 @@
    Lab Technical Officer (LTO) workflow
    Full coverage of statuses
 ================================= */
-.status.pending_lecturer_approval { background: #f59e0b; color: #111; } /* amber */
-.status.approved { background: #16a34a; }                                     /* green */
-.status.rejected_by_lecturer { background: #dc2626; }                          /* red */
-.status.pending { background: #fbbf24; }                                       /* yellow */
-.status.rejected { background: #e74c3c; }                                      /* red */
-.status.issued { background: #2563eb; }                                        /* blue */
-.status.accepted { background: #2ecc71; }                                      /* green */
-.status.returnrequested { background: #f97316; }                                /* orange */
-.status.returned { background: #16a34a; }                                       /* green */
-.status.approved_by_lecturer { background: #16a34a; }                           /* green */
-.status.to_processing { background: #2563eb; }                                  /* blue */
-.status.issued_pending_student_accept { background: #2563eb; }                  /* blue */
-.status.issued_confirmed { background: #2ecc71; }                                /* green */
-.status.returned_pending_to_verify { background: #f97316; }                     /* orange */
-
-/* Fallback unknown status */
-.status-default { background: #6b7280; color: white; }
-
-
 /* Quick action buttons like student dashboard */
 .to-actions {
   display: flex;
   gap: 12px;
-  margin: 15px 0;
 }
 
 .to-actions button {
@@ -145,6 +125,49 @@
   transition: all 0.2s ease;
 }
 
+/* Optional: hover effect like student dashboard */
 .to-actions button:hover {
-  background: #e5e7eb;         /* slightly darker on hover */
+  background: #e5e7eb;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Ensure text readability on light yellow/orange */
+.status.pending_lecturer_approval,
+.status.pending,
+.status.returnrequested {
+  color: #111827;
+}
+
+/* Make Items column left-aligned and flexible */
+.requests-table td:nth-child(4) div {
+  text-align: left;
+  min-width: 120px;
+}
+
+/* Status pills with full coverage */
+.status.pending_lecturer_approval { background: #f59e0b; color: #111; }
+.status.approved { background: #16a34a; }
+.status.rejected_by_lecturer { background: #dc2626; }
+.status.pending { background: #fbbf24; }
+.status.rejected { background: #e74c3c; }
+.status.issued { background: #2563eb; }
+.status.accepted { background: #2ecc71; }
+.status.returnrequested { background: #f97316; }
+.status.returned { background: #16a34a; }
+.status.approved_by_lecturer { background: #16a34a; }
+.status.to_processing { background: #2563eb; }
+.status.issued_pending_student_accept { background: #2563eb; }
+.status.issued_confirmed { background: #2ecc71; }
+.status.returned_pending_to_verify { background: #f97316; }
+
+/* Fallback for unknown status */
+.status-default { background: #6b7280; color: white; }
+
+/* Items column stacked */
+.requests-table td div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
 }
