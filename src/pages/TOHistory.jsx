@@ -28,24 +28,15 @@ export default function TOHistory() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Flatten: one row per item, only done items
   const history = useMemo(() => {
     const itemDone = new Set(["RETURN_REQUESTED", "RETURN_VERIFIED", "DAMAGED_REPORTED"])
     const flat = []
     for (const r of rows || []) {
       const items = Array.isArray(r?.items) ? r.items : []
-      const doneItems = items.filter(it => itemDone.has(String(it?.itemStatus || "")))
-      if (doneItems.length === 0) continue
-      // Mark first item of each request so we can rowspan
-      doneItems.forEach((it, idx) => {
-        flat.push({
-          ...r,
-          _item: it,
-          _itemStatus: String(it?.itemStatus || ""),
-          _isFirst: idx === 0,
-          _rowspan: doneItems.length,
-        })
-      })
+      for (const it of items) {
+        if (!itemDone.has(String(it?.itemStatus || ""))) continue
+        flat.push({ ...r, _item: it, _itemStatus: String(it?.itemStatus || "") })
+      }
     }
     return flat.sort((a, b) => (b.requestId || 0) - (a.requestId || 0))
   }, [rows])
@@ -60,10 +51,6 @@ export default function TOHistory() {
   const historyLecturer = useMemo(() =>
     history.filter((r) => String(r.requesterRole || "").toUpperCase() === "LECTURER"), [history]
   )
-
-  const requesterText = (r) => r.requesterRegNo || r.requesterFullName || "-"
-
-  const canVerifyReturn = (itemStatus) => String(itemStatus || "") === "RETURN_REQUESTED"
 
   const actVerify = async (requestItemId, damaged) => {
     setError("")
@@ -83,25 +70,18 @@ export default function TOHistory() {
           <th>Requester</th>
           <th>Role</th>
           <th>Lab</th>
-          <th>Items</th>
+          <th>Item</th>
           <th>Status</th>
           <th>Verify</th>
         </tr>
       </thead>
       <tbody>
         {data.map((r, idx) => (
-          <tr key={`${keyPrefix}${r.requestId}-${r._item?.requestItemId ?? idx}`}
-              className={r._isFirst && idx !== 0 ? "row-group-start" : ""}>
-            {/* Only render these cells for the first item of each request */}
-            {r._isFirst && (
-              <>
-                <td rowSpan={r._rowspan}>{r.requestId}</td>
-                <td rowSpan={r._rowspan}>{requesterText(r)}</td>
-                <td rowSpan={r._rowspan}>{r.requesterRole || "-"}</td>
-                <td rowSpan={r._rowspan}>{r.labName || "-"}</td>
-              </>
-            )}
-            {/* Item-specific cells — one per row */}
+          <tr key={`${keyPrefix}${r.requestId}-${r._item?.requestItemId ?? idx}`}>
+            <td>{r.requestId}</td>
+            <td>{r.requesterRegNo || r.requesterFullName || "-"}</td>
+            <td>{r.requesterRole || "-"}</td>
+            <td>{r.labName || "-"}</td>
             <td>{r._item?.equipmentName || `Equipment #${r._item?.equipmentId}`} × {r._item?.quantity ?? "-"}</td>
             <td>
               <span className={`status ${r._itemStatus.toLowerCase()}`}>
@@ -109,12 +89,10 @@ export default function TOHistory() {
               </span>
             </td>
             <td>
-              {canVerifyReturn(r._itemStatus) ? (
+              {r._itemStatus === "RETURN_REQUESTED" ? (
                 <div className="to-actions" style={{ justifyContent: "center" }}>
-                  <button className="btn-submit" type="button"
-                    onClick={() => actVerify(r._item?.requestItemId, false)}>Verify OK</button>
-                  <button className="btn-cancel" type="button"
-                    onClick={() => actVerify(r._item?.requestItemId, true)}>Mark Damaged</button>
+                  <button className="btn-submit" type="button" onClick={() => actVerify(r._item?.requestItemId, false)}>Verify OK</button>
+                  <button className="btn-cancel" type="button" onClick={() => actVerify(r._item?.requestItemId, true)}>Mark Damaged</button>
                 </div>
               ) : <span style={{ color: "#777" }}>—</span>}
             </td>
@@ -136,10 +114,8 @@ export default function TOHistory() {
         <Topbar onMenuClick={() => setSidebarOpen(true)} />
         <div className="content">
           {error && <div className="error-message" style={{ color: "red", marginBottom: 10 }}>{error}</div>}
-
           <h3 style={{ marginTop: 12, marginBottom: 10 }}>Student/Instructor History</h3>
           {renderTable(historyStudentInstructor, "No returned records")}
-
           <h3 style={{ marginTop: 22, marginBottom: 10 }}>Lecturer History</h3>
           {renderTable(historyLecturer, "No lecturer records", "L-")}
         </div>
