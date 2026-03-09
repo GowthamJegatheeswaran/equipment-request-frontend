@@ -70,35 +70,46 @@ export default function TOHistory() {
     DAMAGED_REPORTED: "#dc2626",
   };
 
+  // Professional card renderer
   const renderCard = r => {
     const item = r._item;
     const bgColor = statusColorMap[item.itemStatus] || "#2563eb";
 
     return (
       <div key={`${r.requestId}-${item.requestItemId}`} className="history-card">
-        <div className="history-row">
-          <strong>Request ID:</strong> {r.requestId} &nbsp;&nbsp;
-          <strong>Requester:</strong> {requesterText(r)} &nbsp;&nbsp;
-          <strong>Role:</strong> {r.requesterRole || "-"}
+        <div className="history-grid">
+          <div className="label">Request ID:</div>
+          <div className="value">{r.requestId}</div>
+          <div className="label">Requester:</div>
+          <div className="value">{requesterText(r)}</div>
+
+          <div className="label">Role:</div>
+          <div className="value">{r.requesterRole || "-"}</div>
+          <div className="label">Lab:</div>
+          <div className="value">{r.labName || "-"}</div>
+
+          <div className="label">Item:</div>
+          <div className="value">{item.equipmentName || `Equipment #${item.equipmentId}`} × {item.quantity}</div>
+
+          <div className="label">From:</div>
+          <div className="value">{r.fromDate || "-"}</div>
+          <div className="label">To:</div>
+          <div className="value">{r.toDate || "-"}</div>
+
+          <div className="label">Status:</div>
+          <div className="value">
+            <span
+              className="status"
+              style={{
+                backgroundColor: bgColor,
+                color: item.itemStatus === "RETURN_REQUESTED" ? "#111" : "white",
+              }}
+            >
+              {item.itemStatus || "-"}
+            </span>
+          </div>
         </div>
-        <div className="history-row">
-          <strong>Lab:</strong> {r.labName || "-"} &nbsp;&nbsp;
-          <strong>Item:</strong> {item.equipmentName || `Equipment #${item.equipmentId}`} × {item.quantity}
-        </div>
-        <div className="history-row">
-          <strong>From:</strong> {r.fromDate || "-"} &nbsp;&nbsp;
-          <strong>To:</strong> {r.toDate || "-"} &nbsp;&nbsp;
-          <strong>Status:</strong>{" "}
-          <span
-            className="status"
-            style={{
-              backgroundColor: bgColor,
-              color: item.itemStatus === "RETURN_REQUESTED" ? "#111" : "white",
-            }}
-          >
-            {item.itemStatus || "-"}
-          </span>
-        </div>
+
         {canVerify(item.itemStatus) && (
           <div className="history-actions">
             <button className="btn-submit" onClick={() => actVerify(item.requestItemId, false)}>Verify OK</button>
