@@ -29,6 +29,22 @@
   justify-content: center;
 }
 
+.to-actions-horizontal {
+  display: flex;
+  gap: 8px;         /* horizontal spacing between buttons */
+  justify-content: center;
+}
+
+.to-actions-horizontal button.small {
+  padding: 4px 8px; /* small, professional size */
+  font-size: 12px;
+  border-radius: 4px;
+  flex: none;        /* prevent stretching */
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;          /* icon + text spacing */
+}
+
 .to-actions button.small {
   padding: 4px 8px;  /* small, professional size */
   font-size: 12px;

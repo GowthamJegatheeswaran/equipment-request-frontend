@@ -135,30 +135,33 @@ export default function TOApprovalRequests() {
                       </span>
                     </td>
                     <td>
-                      {canIssue(it.itemStatus) && (
-                        <div className="to-actions">
-                          <button onClick={() => actIssue(it.requestItemId)}>
-                            <AiOutlineCheck /> Issue
-                          </button>
-                          <button onClick={() => actWait(it.requestItemId)}>
-                            <AiOutlineClockCircle /> Wait
-                          </button>
-                        </div>
-                      )}
-                      {canVerifyReturn(it.itemStatus) && (
-                        <div className="to-actions">
-                          <button onClick={() => actVerify(it.requestItemId, false)}>
-                            <AiOutlineCheck /> Verify OK
-                          </button>
-                          <button onClick={() => actVerify(it.requestItemId, true)}>
-                            <AiOutlineClose /> Mark Damaged
-                          </button>
-                        </div>
-                      )}
-                      {!canIssue(it.itemStatus) && !canVerifyReturn(it.itemStatus) && (
-                        <span style={{ color: "#777" }}>—</span>
-                      )}
-                    </td>
+  {(canIssue(it.itemStatus) || canVerifyReturn(it.itemStatus)) ? (
+    <div className="to-actions-horizontal">
+      {canIssue(it.itemStatus) && (
+        <>
+          <button className="small" onClick={() => actIssue(it.requestItemId)}>
+            <AiOutlineCheck /> Issue
+          </button>
+          <button className="small" onClick={() => actWait(it.requestItemId)}>
+            <AiOutlineClockCircle /> Wait
+          </button>
+        </>
+      )}
+      {canVerifyReturn(it.itemStatus) && (
+        <>
+          <button className="small" onClick={() => actVerify(it.requestItemId, false)}>
+            <AiOutlineCheck /> Verify OK
+          </button>
+          <button className="small" onClick={() => actVerify(it.requestItemId, true)}>
+            <AiOutlineClose /> Mark Damaged
+          </button>
+        </>
+      )}
+    </div>
+  ) : (
+    <span style={{ color: "#777" }}>—</span>
+  )}
+</td>
                   </tr>
                 )
               })}
