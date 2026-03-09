@@ -41,7 +41,7 @@ export default function Sidebar({ isOpen, onClose }) {
       case "to":
         return [
           { label: "Dashboard", path: "/to-dashboard", icon: <AiOutlineDashboard /> },
-          { label: "View Requests", path: "/to-view-requests", icon: <AiOutlineFileText /> },
+          { label: "View Requests", path: "/view-requests", icon: <AiOutlineFileText /> },
           { label: "Help/Support", path: "/help", icon: <AiOutlineSetting /> },
         ]
       case "hod":
