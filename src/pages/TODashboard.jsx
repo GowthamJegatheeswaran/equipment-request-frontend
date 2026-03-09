@@ -101,33 +101,26 @@ export default function TODashboard() {
               </tr>
             </thead>
             <tbody>
-              {assigned.map((r) => {
-                const it = r._item
-                return (
-                  <tr key={`${r.requestId}-${it.requestItemId}`}>
-                    <td>{r.requestId}</td>
-                    <td>{requesterText(r)}</td>
-                    <td>{r.labName || "-"}</td>
-                    <td>{it.equipmentName || `Equipment #${it.equipmentId}`} × {it.quantity}</td>
-                    <td>{r.fromDate || "-"}</td>
-                    <td>{r.toDate || "-"}</td>
-                    <td>
-                      <span className={`status ${String(it.itemStatus || "").toLowerCase()}`}>
-                        {it.itemStatus || "-"}
-                      </span>
-                    </td>
-                  </tr>
-                )
-              })}
-
-              {assigned.length === 0 && !loading && (
-                <tr>
-                  <td colSpan="7" style={{ textAlign: "center" }}>
-                    No assigned requests
-                  </td>
-                </tr>
-              )}
-            </tbody>
+  {assigned.map((r) => {
+    const it = r._item; // flatten each request per equipment
+    const statusClass = String(it.itemStatus || "default").toLowerCase(); // map itemStatus to CSS class
+    return (
+      <tr key={`${r.requestId}-${it.requestItemId}`}>
+        <td>{r.requestId}</td>
+        <td>{requesterText(r)}</td>
+        <td>{r.labName || "-"}</td>
+        <td>{it.equipmentName || `Equipment #${it.equipmentId}`} × {it.quantity}</td>
+        <td>{r.fromDate || "-"}</td>
+        <td>{r.toDate || "-"}</td>
+        <td>
+          <span className={`status ${statusClass}`}>
+            {it.itemStatus || "-"}
+          </span>
+        </td>
+      </tr>
+    )
+  })}
+</tbody>
           </table>
         </div>
       </div>
