@@ -70,7 +70,8 @@
   border-bottom: 1px solid #e5e7eb;
   font-size: 14px;
   color: #374151;
-  text-align: center; /* all columns same alignment */
+  text-align: center;
+  vertical-align: middle;
 }
 
 .requests-table th {
@@ -153,24 +154,38 @@
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
+
 /* Items cell — stacked list inside one row */
 .items-cell {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 
-/* Verify group — label + buttons per item */
+/* Verify group — NO border, no divider between items */
 .verify-group {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
   padding: 4px 0;
+  border: none;
 }
 
 .verify-label {
   font-size: 12px;
   color: #555;
+}
+
+/* Prevent td border-bottom from showing inside multi-item rows */
+.requests-table td {
+  vertical-align: middle;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* Remove any internal borders inside cells */
+.items-cell > *,
+.verify-group > * {
+  border: none;
 }
