@@ -136,7 +136,7 @@ export default function TOApprovalRequests() {
                     </td>
   <td>
   {(canIssue(it.itemStatus) || canVerifyReturn(it.itemStatus)) ? (
-    <div className="to-actions-horizontal">
+    <div className="action-buttons">
       {canIssue(it.itemStatus) && (
         <>
           <button className="small" onClick={() => actIssue(it.requestItemId)}>
@@ -150,10 +150,10 @@ export default function TOApprovalRequests() {
       {canVerifyReturn(it.itemStatus) && (
         <>
           <button className="small" onClick={() => actVerify(it.requestItemId, false)}>
-            <AiOutlineCheck /> OK
+            <AiOutlineCheck /> Verify OK
           </button>
           <button className="small" onClick={() => actVerify(it.requestItemId, true)}>
-            <AiOutlineClose /> Damaged
+            <AiOutlineClose /> Mark Damaged
           </button>
         </>
       )}
