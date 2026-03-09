@@ -22,16 +22,20 @@
 }
 
 /* Quick action buttons (table row actions) */
+/* Table row actions buttons (Issue / Wait / Verify / Mark Damaged) */
 .to-actions {
   display: flex;
-  gap: 12px;
+  gap: 12px; /* space between buttons */
 }
 
 .to-actions button {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 10px 18px;
+  justify-content: center;
+  gap: 8px;              /* space between icon and text */
+  padding: 12px 22px;     /* increase button size */
+  min-width: 80px;        /* ensure a minimum width */
+  font-size: 14px;        /* slightly bigger text */
   border: 1px solid #d1d5db;
   border-radius: 8px;
   background: #f3f4f6;
