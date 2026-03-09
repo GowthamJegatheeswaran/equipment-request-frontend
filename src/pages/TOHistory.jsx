@@ -28,17 +28,17 @@ export default function TOHistory() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // One row per request, items grouped inside
   const history = useMemo(() => {
     const itemDone = new Set(["RETURN_REQUESTED", "RETURN_VERIFIED", "DAMAGED_REPORTED"])
-    const flat = []
+    const grouped = []
     for (const r of rows || []) {
       const items = Array.isArray(r?.items) ? r.items : []
-      for (const it of items) {
-        if (!itemDone.has(String(it?.itemStatus || ""))) continue
-        flat.push({ ...r, _item: it, _itemStatus: String(it?.itemStatus || "") })
-      }
+      const doneItems = items.filter(it => itemDone.has(String(it?.itemStatus || "")))
+      if (doneItems.length === 0) continue
+      grouped.push({ ...r, _items: doneItems })
     }
-    return flat.sort((a, b) => (b.requestId || 0) - (a.requestId || 0))
+    return grouped.sort((a, b) => (b.requestId || 0) - (a.requestId || 0))
   }, [rows])
 
   const historyStudentInstructor = useMemo(() =>
@@ -53,13 +53,52 @@ export default function TOHistory() {
   )
 
   const requesterText = (r) => r.requesterRegNo || r.requesterFullName || "-"
+
   const renderItems = (r) => {
-    const it = r?._item
-    if (!it) return <span style={{ color: "#777" }}>—</span>
-    return <div>{it.equipmentName || `Equipment #${it.equipmentId}`} × {it.quantity ?? "-"}</div>
+    const items = r?._items
+    if (!items || items.length === 0) return <span style={{ color: "#777" }}>—</span>
+    return (
+      <div className="items-cell">
+        {items.map((it, i) => (
+          <span key={it?.requestItemId ?? i}>
+            {it.equipmentName || `Equipment #${it.equipmentId}`} × {it.quantity ?? "-"}
+          </span>
+        ))}
+      </div>
+    )
   }
 
-  const canVerifyReturn = (itemStatus) => String(itemStatus || "") === "RETURN_REQUESTED"
+  const renderStatus = (r) => {
+    const items = r?._items || []
+    const unique = [...new Set(items.map(it => String(it?.itemStatus || "")))]
+    return (
+      <div className="items-cell">
+        {unique.map((s, i) => (
+          <span key={i} className={`status ${s.toLowerCase()}`}>{s || "-"}</span>
+        ))}
+      </div>
+    )
+  }
+
+  const renderVerify = (r) => {
+    const items = r?._items || []
+    const verifiable = items.filter(it => String(it?.itemStatus || "") === "RETURN_REQUESTED")
+    if (verifiable.length === 0) return <span style={{ color: "#777" }}>—</span>
+    return (
+      <div className="items-cell">
+        {verifiable.map((it) => (
+          <div key={it.requestItemId} className="verify-group">
+            <span className="verify-label">{it.equipmentName || `#${it.equipmentId}`}</span>
+            <div className="to-actions" style={{ justifyContent: "center" }}>
+              <button className="btn-submit" type="button" onClick={() => actVerify(it.requestItemId, false)}>Verify OK</button>
+              <button className="btn-cancel" type="button" onClick={() => actVerify(it.requestItemId, true)}>Mark Damaged</button>
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
   const actVerify = async (requestItemId, damaged) => {
     setError("")
     try {
@@ -70,104 +109,53 @@ export default function TOHistory() {
     }
   }
 
+  const renderTable = (data, emptyMsg, keyPrefix = "") => (
+    <table className="requests-table">
+      <thead>
+        <tr>
+          <th>Request_ID</th>
+          <th>Requester</th>
+          <th>Role</th>
+          <th>Lab</th>
+          <th>Items</th>
+          <th>Status</th>
+          <th>Verify</th>
+        </tr>
+      </thead>
+      <tbody>
+        {data.map((r) => (
+          <tr key={`${keyPrefix}${r.requestId}`}>
+            <td>{r.requestId}</td>
+            <td>{requesterText(r)}</td>
+            <td>{r.requesterRole || "-"}</td>
+            <td>{r.labName || "-"}</td>
+            <td>{renderItems(r)}</td>
+            <td>{renderStatus(r)}</td>
+            <td>{renderVerify(r)}</td>
+          </tr>
+        ))}
+        {data.length === 0 && !loading && (
+          <tr>
+            <td colSpan="7" style={{ textAlign: "center", color: "#777" }}>{emptyMsg}</td>
+          </tr>
+        )}
+      </tbody>
+    </table>
+  )
+
   return (
     <div className="dashboard-container">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="main-content">
         <Topbar onMenuClick={() => setSidebarOpen(true)} />
         <div className="content">
-
           {error && <div className="error-message" style={{ color: "red", marginBottom: 10 }}>{error}</div>}
 
-          {/* Student/Instructor History */}
           <h3 style={{ marginTop: 12, marginBottom: 10 }}>Student/Instructor History</h3>
-          <table className="requests-table">
-            <thead>
-              <tr>
-                <th>Request_ID</th>
-                <th>Requester</th>
-                <th>Role</th>
-                <th>Lab</th>
-                <th>Items</th>
-                <th style={{ textAlign: "center" }}>Status</th>
-                <th style={{ textAlign: "center" }}>Verify</th>
-              </tr>
-            </thead>
-            <tbody>
-              {historyStudentInstructor.map((r) => (
-                <tr key={`${r.requestId}-${r?._item?.requestItemId || "x"}`}>
-                  <td style={{ textAlign: "center" }}>{r.requestId}</td>
-                  <td>{requesterText(r)}</td>
-                  <td style={{ textAlign: "center" }}>{r.requesterRole || "-"}</td>
-                  <td style={{ textAlign: "center" }}>{r.labName || "-"}</td>
-                  <td>{renderItems(r)}</td>
-                  <td style={{ textAlign: "center" }}>
-                    <span className={`status ${String(r._itemStatus || "").toLowerCase()}`}>
-                      {r._itemStatus || "-"}
-                    </span>
-                  </td>
-                  <td style={{ textAlign: "center" }}>
-                    {canVerifyReturn(r._itemStatus) ? (
-                      <div className="to-actions" style={{ justifyContent: "center" }}>
-                        <button className="btn-submit" type="button" onClick={() => actVerify(r?._item?.requestItemId, false)}>Verify OK</button>
-                        <button className="btn-cancel" type="button" onClick={() => actVerify(r?._item?.requestItemId, true)}>Mark Damaged</button>
-                      </div>
-                    ) : <span style={{ color: "#777" }}>—</span>}
-                  </td>
-                </tr>
-              ))}
-              {historyStudentInstructor.length === 0 && !loading && (
-                <tr>
-                  <td colSpan="7" style={{ textAlign: "center" }}>No returned records</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+          {renderTable(historyStudentInstructor, "No returned records")}
 
-          {/* Lecturer History */}
           <h3 style={{ marginTop: 22, marginBottom: 10 }}>Lecturer History</h3>
-          <table className="requests-table">
-            <thead>
-              <tr>
-                <th>Request_ID</th>
-                <th>Requester</th>
-                <th>Role</th>
-                <th>Lab</th>
-                <th>Items</th>
-                <th style={{ textAlign: "center" }}>Status</th>
-                <th style={{ textAlign: "center" }}>Verify</th>
-              </tr>
-            </thead>
-            <tbody>
-              {historyLecturer.map((r) => (
-                <tr key={`L-${r.requestId}-${r?._item?.requestItemId || "x"}`}>
-                  <td style={{ textAlign: "center" }}>{r.requestId}</td>
-                  <td>{requesterText(r)}</td>
-                  <td style={{ textAlign: "center" }}>{r.requesterRole || "-"}</td>
-                  <td style={{ textAlign: "center" }}>{r.labName || "-"}</td>
-                  <td>{renderItems(r)}</td>
-                  <td style={{ textAlign: "center" }}>
-                    <span className={`status ${String(r._itemStatus || "").toLowerCase()}`}>
-                      {r._itemStatus || "-"}
-                    </span>
-                  </td>
-                  <td style={{ textAlign: "center" }}>
-                    {canVerifyReturn(r._itemStatus) ? (
-                      <div className="to-actions" style={{ justifyContent: "center" }}>
-                        <button className="btn-submit" type="button" onClick={() => actVerify(r?._item?.requestItemId, false)}>Verify OK</button>
-                        <button className="btn-cancel" type="button" onClick={() => actVerify(r?._item?.requestItemId, true)}>Mark Damaged</button>
-                      </div>
-                    ) : <span style={{ color: "#777" }}>—</span>}
-                  </td>
-                </tr>
-              ))}
-              {historyLecturer.length === 0 && !loading && (
-                <tr>
-                  <td colSpan="7" style={{ textAlign: "center" }}>No lecturer records</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+          {renderTable(historyLecturer, "No lecturer records", "L-")}
         </div>
       </div>
     </div>
