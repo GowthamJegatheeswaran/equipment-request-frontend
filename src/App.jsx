@@ -28,6 +28,7 @@ import TOApprovalRequests from "./pages/TOApprovalRequests";
 import TOPurchase from "./pages/TOPurchase";
 import TOPurchaseNew from "./pages/TOPurchaseNew";
 import TOHistory from "./pages/TOHistory";
+import TOViewRequests from "./pages/TOViewRequests";
 
 // HOD
 import HodDashboard from "./pages/HodDashboard";
@@ -87,6 +88,7 @@ function App() {
           <Route path="/to-purchase" element={<TOPurchase />} />
           <Route path="/to-purchase-new" element={<TOPurchaseNew />} />
           <Route path="/to-history" element={<TOHistory />} />
+          <Route path="/to-view-requests" element={<TOViewRequests />} />
 
           {/* HOD */}
           <Route path="/hod-dashboard" element={<HodDashboard />} />
