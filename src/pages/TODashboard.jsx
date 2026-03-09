@@ -101,9 +101,9 @@ export default function TOApprovalRequests() {
                 <th>Actions</th>
               </tr>
             </thead>
-   <tbody>
+ <tbody>
   {sorted.map((r) => {
-    const it = r._item; // Each row now corresponds to one equipment item
+    const it = r._item; // individual equipment item
     const statusClass = String(it?.itemStatus || "").toLowerCase();
 
     return (
@@ -112,8 +112,8 @@ export default function TOApprovalRequests() {
         <td>{requesterText(r)}</td>
         <td>{r.labName || "-"}</td>
         <td>{it.equipmentName || `Equipment #${it.equipmentId}`} × {it.quantity}</td>
-        <td>{fmt(r.fromDate)}</td>
-        <td>{fmt(r.toDate)}</td>
+        <td>{r.fromDate || "-"}</td>
+        <td>{r.toDate || "-"}</td>
         <td>
           <span className={`status ${statusClass}`}>
             {it.itemStatus || "-"}
