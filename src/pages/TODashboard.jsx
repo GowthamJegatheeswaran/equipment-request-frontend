@@ -101,49 +101,53 @@ export default function TOApprovalRequests() {
                 <th>Actions</th>
               </tr>
             </thead>
-            <tbody>
-              {sorted.map((r) => {
-                const it = r._item
-                const statusClass = it?.itemStatus ? String(it.itemStatus).toLowerCase() : "status-default"
-                return (
-                  <tr key={`${r.requestId}-${it.requestItemId}`}>
-                    <td>{r.requestId}</td>
-                    <td>{requesterText(r)}</td>
-                    <td>{r.labName || "-"}</td>
-                    <td>{it.equipmentName || `Equipment #${it.equipmentId}`} × {it.quantity}</td>
-                    <td>{fmt(r.fromDate)}</td>
-                    <td>{fmt(r.toDate)}</td>
-                    <td>
-                      <span className={`status ${statusClass}`}>
-                        {it.itemStatus || "-"}
-                      </span>
-                    </td>
-                    <td>
-                      {canIssue(it.itemStatus) && (
-                        <div className="to-actions">
-                          <button onClick={() => actIssue(it.requestItemId)}><AiOutlineCheck /> Issue</button>
-                          <button onClick={() => actWait(it.requestItemId)}><AiOutlineClockCircle /> Wait</button>
-                        </div>
-                      )}
-                      {canVerifyReturn(it.itemStatus) && (
-                        <div className="to-actions">
-                          <button onClick={() => actVerify(it.requestItemId, false)}><AiOutlineCheck /> Verify OK</button>
-                          <button onClick={() => actVerify(it.requestItemId, true)}><AiOutlineClose /> Mark Damaged</button>
-                        </div>
-                      )}
-                      {!canIssue(it.itemStatus) && !canVerifyReturn(it.itemStatus) && (
-                        <span style={{ color: "#777" }}>—</span>
-                      )}
-                    </td>
-                  </tr>
-                )
-              })}
-              {sorted.length === 0 && !loading && (
-                <tr>
-                  <td colSpan="8" style={{ textAlign: "center" }}>No requests</td>
-                </tr>
-              )}
-            </tbody>
+   <tbody>
+  {sorted.map((r) => {
+    const it = r._item; // Each row now corresponds to one equipment item
+    const statusClass = String(it?.itemStatus || "").toLowerCase();
+
+    return (
+      <tr key={`${r.requestId}-${it.requestItemId}`}>
+        <td>{r.requestId}</td>
+        <td>{requesterText(r)}</td>
+        <td>{r.labName || "-"}</td>
+        <td>{it.equipmentName || `Equipment #${it.equipmentId}`} × {it.quantity}</td>
+        <td>{fmt(r.fromDate)}</td>
+        <td>{fmt(r.toDate)}</td>
+        <td>
+          <span className={`status ${statusClass}`}>
+            {it.itemStatus || "-"}
+          </span>
+        </td>
+        <td>
+          {canIssue(it.itemStatus) && (
+            <div className="to-actions">
+              <button onClick={() => actIssue(it.requestItemId)}>
+                <AiOutlineCheck /> Issue
+              </button>
+              <button onClick={() => actWait(it.requestItemId)}>
+                <AiOutlineClockCircle /> Wait
+              </button>
+            </div>
+          )}
+          {canVerifyReturn(it.itemStatus) && (
+            <div className="to-actions">
+              <button onClick={() => actVerify(it.requestItemId, false)}>
+                <AiOutlineCheck /> Verify OK
+              </button>
+              <button onClick={() => actVerify(it.requestItemId, true)}>
+                <AiOutlineClose /> Mark Damaged
+              </button>
+            </div>
+          )}
+          {!canIssue(it.itemStatus) && !canVerifyReturn(it.itemStatus) && (
+            <span style={{ color: "#777" }}>—</span>
+          )}
+        </td>
+      </tr>
+    );
+  })}
+</tbody>
           </table>
         </div>
       </div>
