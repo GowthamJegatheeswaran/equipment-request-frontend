@@ -27,12 +27,12 @@ export default function TOHistory() {
     load()
   }, [])
 
-  // Flatten items: one <tr> per equipment item
+  // Flatten items: one row per equipment item
   const flatHistory = useMemo(() => {
     const doneStatuses = new Set(["RETURN_REQUESTED", "RETURN_VERIFIED", "DAMAGED_REPORTED"])
     const out = []
     for (const r of rows || []) {
-      const items = Array.isArray(r?.items) ? r.items : []
+      const items = Array.isArray(r.items) ? r.items : []
       for (const it of items) {
         if (!doneStatuses.has(String(it?.itemStatus || ""))) continue
         out.push({ ...r, _item: it })
