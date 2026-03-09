@@ -1,7 +1,7 @@
 import "../styles/toDashboard.css"
 import Sidebar from "../components/Sidebar"
 import Topbar from "../components/Topbar"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 import { ToRequestAPI } from "../api/api"
 import { AiOutlineCheck, AiOutlineClockCircle, AiOutlineClose } from "react-icons/ai"
 
@@ -28,18 +28,6 @@ export default function TOApprovalRequests() {
     load()
   }, [])
 
-  const sorted = useMemo(() => {
-    const out = []
-    for (const r of rows || []) {
-      const items = Array.isArray(r?.items) ? r.items : []
-      for (const it of items) {
-        const st = String(it?.itemStatus || "")
-        out.push({ ...r, _item: it })
-      }
-    }
-    return out.sort((a, b) => (b.requestId || 0) - (a.requestId || 0))
-  }, [rows])
-
   const fmt = (d) => (d ? String(d) : "-")
   const requesterText = (r) => r.requesterRegNo || r.requesterFullName || "-"
 
@@ -47,6 +35,7 @@ export default function TOApprovalRequests() {
     const s = String(itemStatus || "")
     return s === "APPROVED_BY_LECTURER" || s === "WAITING_TO_ISSUE"
   }
+
   const canVerifyReturn = (itemStatus) => String(itemStatus || "") === "RETURN_REQUESTED"
 
   const actIssue = async (requestItemId) => {
@@ -82,11 +71,16 @@ export default function TOApprovalRequests() {
   }
 
   const renderItems = (r) => {
-    const it = r?._item
-    if (!it) return "-"
+    const items = Array.isArray(r.items) ? r.items : []
+    if (!items.length) return "-"
+
     return (
-      <div>
-        {it.equipmentName || `Equipment #${it.equipmentId}`} × {it.quantity}
+      <div style={{ display: "flex", flexDirection: "column", gap: "4px", textAlign: "left" }}>
+        {items.map((it) => (
+          <div key={it.requestItemId}>
+            {it.equipmentName || `Equipment #${it.equipmentId}`} × {it.quantity}
+          </div>
+        ))}
       </div>
     )
   }
@@ -115,53 +109,54 @@ export default function TOApprovalRequests() {
             </thead>
 
             <tbody>
-              {sorted.map((r) => {
-                const statusClass = r?._item?.itemStatus
-                  ? String(r._item.itemStatus).toLowerCase()
-                  : "status-default"
-                return (
-                  <tr key={`${r.requestId}-${r?._item?.requestItemId}`}>
-                    <td>{r.requestId}</td>
-                    <td>{requesterText(r)}</td>
-                    <td>{r.labName || "-"}</td>
-                    <td>{renderItems(r)}</td>
-                    <td>{fmt(r.fromDate)}</td>
-                    <td>{fmt(r.toDate)}</td>
-                    <td>
-                      <span className={`status ${statusClass}`}>
-                        {r?._item?.itemStatus || "-"}
-                      </span>
-                    </td>
-                    <td>
-                      {canIssue(r?._item?.itemStatus) && (
-                        <div className="to-actions">
-                          <button onClick={() => actIssue(r?._item?.requestItemId)}>
-                            <AiOutlineCheck /> Issue
-                          </button>
-                          <button onClick={() => actWait(r?._item?.requestItemId)}>
-                            <AiOutlineClockCircle /> Wait
-                          </button>
+              {rows.map((r) => (
+                <tr key={r.requestId}>
+                  <td>{r.requestId}</td>
+                  <td>{requesterText(r)}</td>
+                  <td>{r.labName || "-"}</td>
+                  <td>{renderItems(r)}</td>
+                  <td>{fmt(r.fromDate)}</td>
+                  <td>{fmt(r.toDate)}</td>
+                  <td>
+                    <span className={`status ${String(r.status || "").toLowerCase()}`}>
+                      {r.status || "-"}
+                    </span>
+                  </td>
+                  <td>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                      {r.items.map((it) => (
+                        <div key={it.requestItemId} style={{ display: "flex", gap: "6px" }}>
+                          {canIssue(it.itemStatus) && (
+                            <>
+                              <button onClick={() => actIssue(it.requestItemId)}>
+                                <AiOutlineCheck /> Issue
+                              </button>
+                              <button onClick={() => actWait(it.requestItemId)}>
+                                <AiOutlineClockCircle /> Wait
+                              </button>
+                            </>
+                          )}
+                          {canVerifyReturn(it.itemStatus) && (
+                            <>
+                              <button onClick={() => actVerify(it.requestItemId, false)}>
+                                <AiOutlineCheck /> Verify OK
+                              </button>
+                              <button onClick={() => actVerify(it.requestItemId, true)}>
+                                <AiOutlineClose /> Mark Damaged
+                              </button>
+                            </>
+                          )}
                         </div>
-                      )}
-                      {canVerifyReturn(r?._item?.itemStatus) && (
-                        <div className="to-actions">
-                          <button onClick={() => actVerify(r?._item?.requestItemId, false)}>
-                            <AiOutlineCheck /> Verify OK
-                          </button>
-                          <button onClick={() => actVerify(r?._item?.requestItemId, true)}>
-                            <AiOutlineClose /> Mark Damaged
-                          </button>
-                        </div>
-                      )}
-                      {!canIssue(r?._item?.itemStatus) && !canVerifyReturn(r?._item?.itemStatus) && (
+                      ))}
+                      {!r.items.some((it) => canIssue(it.itemStatus) || canVerifyReturn(it.itemStatus)) && (
                         <span style={{ color: "#777" }}>—</span>
                       )}
-                    </td>
-                  </tr>
-                )
-              })}
+                    </div>
+                  </td>
+                </tr>
+              ))}
 
-              {sorted.length === 0 && !loading && (
+              {rows.length === 0 && !loading && (
                 <tr>
                   <td colSpan="8" style={{ textAlign: "center" }}>
                     No requests
