@@ -118,17 +118,35 @@ select, input {
 }
 
 .item-row .btn-cancel {
-  background: #e5e7eb;
-  color: #111;
-  padding: 4px 10px;
+  background: #dc2626;  /* red color for remove */
+  color: #fff;
+  padding: 4px 8px;     /* reduced width */
   border-radius: 4px;
   border: none;
   cursor: pointer;
+  font-size: 0.85rem;
 }
 
-/* Submit row aligned right */
+.item-row .btn-cancel:hover {
+  background: #b91c1c;
+}
+
+/* Submit button aligned left */
 .submit-row {
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
   margin-top: 12px;
+}
+
+.submit-row .btn-primary {
+  width: auto;
+  padding: 6px 16px;
+  font-size: 0.95rem;
+  border-radius: 6px;
+  background-color: #1d4ed8; /* sidebar color */
+  color: #fff;
+}
+
+.submit-row .btn-primary:hover {
+  background-color: #2563eb;
 }
