@@ -1,93 +1,69 @@
-import "../styles/hodDashboard.css"
+import "../styles/lecturerDashboard.css"  // reuse lecturer styles
 import Sidebar from "../components/Sidebar"
 import Topbar from "../components/Topbar"
 import SummaryCard from "../components/SummaryCard"
 import { useEffect, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { LecturerRequestAPI, AuthAPI } from "../api/api"
+import { AiOutlinePlus, AiOutlineFileText, AiOutlineHourglass } from "react-icons/ai"
 
 export default function HodDashboard() {
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [me, setMe] = useState(null)
-  const [requests, setRequests] = useState([])
+  const [myRows, setMyRows] = useState([])
+  const [queue, setQueue] = useState([])
+  const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
+  // Load dashboard data
   const load = async () => {
     setError("")
     try {
       setLoading(true)
-      const profile = await AuthAPI.me()
-      setMe(profile)
-      const list = await LecturerRequestAPI.my()
-      setRequests(Array.isArray(list) ? list : [])
+      const [q, my] = await Promise.all([
+        LecturerRequestAPI.queue(),
+        LecturerRequestAPI.my()
+      ])
+      setQueue(Array.isArray(q) ? q : [])
+      setMyRows(Array.isArray(my) ? my : [])
     } catch (e) {
-      setError(e?.message || "Failed to load HOD requests")
+      setError(e?.message || "Failed to load HOD dashboard")
     } finally {
       setLoading(false)
     }
   }
 
-  useEffect(() => { load() }, [])
-
-  // Count summary cards
-  const counts = useMemo(() => {
-    const lower = (s) => String(s || "").toLowerCase()
-    const pending = requests.filter(r => lower(r.status).includes("pending")).length
-    const approved = requests.filter(r => lower(r.status).includes("approved") || lower(r.status).includes("accepted")).length
-    const rejected = requests.filter(r => lower(r.status).includes("rejected")).length
-    const total = requests.length
-    return { pending, approved, rejected, total }
-  }, [requests])
-
-  // Flatten each request to individual items (for cards)
-  const flatRequests = useMemo(() => {
-    const validStatuses = new Set(["RETURN_VERIFIED", "DAMAGED_REPORTED", "APPROVED", "REJECTED", "PENDING"])
-    const out = []
-    for (const r of requests || []) {
-      const items = Array.isArray(r.items) ? r.items : []
-      for (const it of items) {
-        if (!validStatuses.has(it.itemStatus)) continue
-        out.push({ ...r, _item: it, _itemStatus: it.itemStatus })
+  useEffect(() => {
+    load()
+    const fetchUser = async () => {
+      try {
+        const me = await AuthAPI.me()
+        setUser(me)
+      } catch {
+        console.error("Failed to fetch user")
       }
     }
-    return out.sort((a, b) => (b.id || 0) - (a.id || 0))
-  }, [requests])
+    fetchUser()
+  }, [])
 
-  const statusColorMap = {
-    RETURN_VERIFIED: "#6B7280",
-    DAMAGED_REPORTED: "#DC2626",
-    APPROVED: "#16A34A",
-    REJECTED: "#DC2626",
-    PENDING: "#FBBF24",
-    default: "#2563EB",
-  }
+  // Counts for summary cards
+  const counts = useMemo(() => {
+    const pendingRequests = queue.length
+    const totalRequests = myRows.length
+    return { pendingRequests, totalRequests }
+  }, [queue, myRows])
 
-  const renderRequestCard = (r) => {
-    const it = r._item
-    const bgColor = statusColorMap[it.itemStatus] || statusColorMap.default
-    return (
-      <div key={`${r.id}-${it.requestItemId}`} className="history-card">
-        <div className="history-grid">
-          <div className="history-left">
-            <div><strong>Request ID:</strong> {r.id}</div>
-            <div><strong>Requester:</strong> {r.requesterFullName || r.requesterRegNo || "-"}</div>
-            <div><strong>Lab:</strong> {r.labName || "-"}</div>
-            <div><strong>Purpose:</strong> {r.purpose || "-"}</div>
-          </div>
-          <div className="history-right">
-            <div><strong>Item:</strong> {it.equipmentName || `Equipment #${it.equipmentId}`} × {it.quantity}</div>
-            <div>
-              <strong>Status:</strong>{" "}
-              <span className="status" style={{ backgroundColor: bgColor, color: "#fff" }}>
-                {it.itemStatus || "-"}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
+  const recentMine = useMemo(() => {
+    return [...myRows].sort((a,b) => (b.requestId || 0) - (a.requestId || 0)).slice(0, 5)
+  }, [myRows])
+
+  const itemsPreview = (r) => {
+    const items = Array.isArray(r?.items) ? r.items : []
+    if (items.length === 0) return { text: "-", qty: "-" }
+    if (items.length === 1) return { text: items[0].equipmentName || "-", qty: items[0].quantity ?? "-" }
+    const first = items[0]
+    return { text: `${first.equipmentName || "-"} +${items.length-1} more`, qty: first.quantity ?? "-" }
   }
 
   return (
@@ -95,21 +71,69 @@ export default function HodDashboard() {
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="main-content">
         <Topbar onMenuClick={() => setSidebarOpen(true)} />
+
         <div className="content">
-          <h2 className="welcome">Welcome, {me?.fullName || "HOD"}!</h2>
+          <h2 className="welcome">Welcome, {user?.fullName || "HOD"}!</h2>
 
-          {error && <div className="error-message">{error}</div>}
+          {error && <div className="error-message" style={{ color: "red", marginBottom: 10 }}>{error}</div>}
 
-          <h3>Quick Summary</h3>
+          {/* Summary Cards */}
           <div className="summary-grid">
-            <SummaryCard title="Pending" value={counts.pending} className="pending" />
-            <SummaryCard title="Approved" value={counts.approved} className="approved" />
-            <SummaryCard title="Rejected" value={counts.rejected} className="rejected" />
-            <SummaryCard title="Total Requests" value={counts.total} className="total" />
+            <SummaryCard 
+              title="Pending Requests" 
+              value={counts.pendingRequests} 
+              icon={<AiOutlineHourglass size={28} />} 
+              className="pending" 
+            />
+            <SummaryCard 
+              title="Total Requests" 
+              value={counts.totalRequests} 
+              icon={<AiOutlineFileText size={28} />} 
+              className="total" 
+            />
           </div>
 
-          <h3 style={{ marginTop: 24 }}>Assigned Requests</h3>
-          {flatRequests.length === 0 ? "No requests yet" : flatRequests.map(renderRequestCard)}
+          {/* Quick Actions */}
+          <h3>Quick Actions</h3>
+          <div className="actions">
+            <button onClick={() => navigate("/lecturer-new-request")}><AiOutlinePlus size={18} /> New Request</button>
+            <button onClick={() => navigate("/lecturer-applications")}><AiOutlineFileText size={18} /> Applications</button>
+            <button onClick={() => navigate("/lecturer-view-requests")}><AiOutlineFileText size={18} /> View Requests</button>
+          </div>
+
+          {/* Recent Requests Table */}
+          <h3 style={{ marginTop: 24 }}>My Recent Requests</h3>
+          <table className="requests-table">
+            <thead>
+              <tr>
+                <th>Equipment</th>
+                <th>Quantity</th>
+                <th>From</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recentMine.map((r) => {
+                const p = itemsPreview(r)
+                const statusClass = String(r.status || "").toLowerCase()
+                return (
+                  <tr key={r.requestId}>
+                    <td>{p.text}</td>
+                    <td style={{ textAlign: "center" }}>{p.qty}</td>
+                    <td style={{ textAlign: "center" }}>{r.fromDate || "-"}</td>
+                    <td style={{ textAlign: "center" }}>
+                      <span className={`status ${statusClass}`}>{r.status || "-"}</span>
+                    </td>
+                  </tr>
+                )
+              })}
+              {recentMine.length === 0 && !loading && (
+                <tr>
+                  <td colSpan="4" style={{ textAlign: "center" }}>No requests yet</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
