@@ -10,7 +10,7 @@ export default function LoginSignup() {
   const [showForgot, setShowForgot] = useState(false)
   const [showSignup, setShowSignup] = useState(false)
 
-  // ---------- LOGIN STATE ----------
+  // ---------- LOGIN STATE ---------
   const [loginEmail, setLoginEmail] = useState("")
   const [loginPassword, setLoginPassword] = useState("")
   const [loginError, setLoginError] = useState("")
