@@ -1,116 +1,88 @@
-import { useEffect, useState } from "react";
+import "../styles/toDashboard.css";
 import Sidebar from "../components/Sidebar";
 import Topbar from "../components/Topbar";
-import "../styles/studentDashboard.css";
+import { useEffect, useMemo, useState } from "react";
 import { ToRequestAPI } from "../api/api";
-import { useNavigate } from "react-router-dom";
+import { AiOutlineCheck, AiOutlineClockCircle, AiOutlineClose } from "react-icons/ai";
 
 export default function TOViewRequests() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const navigate = useNavigate();
 
-  // Load TO requests (old working logic)
   const load = async () => {
     setError("");
     try {
-      setLoading(true);
-      // Old working endpoint
-      const list = await ToRequestAPI.all(); 
+      const list = await ToRequestAPI.all();
       setRows(Array.isArray(list) ? list : []);
     } catch (e) {
-      setError(e.message || "Failed to load requests");
-    } finally {
-      setLoading(false);
+      setError(e?.message || "Failed to load requests");
     }
   };
 
-  useEffect(() => { load() }, []);
+  useEffect(() => { load(); }, []);
 
-  const itemStatusMap = {
-    APPROVED_BY_LECTURER: "approved",
-    TO_PROCESSING: "pending",
-    ISSUED_PENDING_STUDENT_ACCEPT: "issued",
-    ISSUED_CONFIRMED: "accepted",
-    RETURNED_PENDING_TO_VERIFY: "returnrequested",
-    RETURNED: "returned",
-    REJECTED: "rejected",
+  const sorted = useMemo(() => {
+    const out = [];
+    for (const r of rows || []) {
+      const items = Array.isArray(r?.items) ? r.items : [];
+      for (const it of items) {
+        out.push({ ...r, _item: it });
+      }
+    }
+    return out.sort((a, b) => (b.requestId || 0) - (a.requestId || 0));
+  }, [rows]);
+
+  const requesterText = r => r.requesterRegNo || r.requesterFullName || "-";
+
+  const statusColorMap = {
+    APPROVED_BY_LECTURER: "#16a34a",
+    TO_PROCESSING: "#f59e0b",
+    ISSUED_PENDING_STUDENT_ACCEPT: "#2563eb",
+    ISSUED_CONFIRMED: "#1e40af",
+    RETURNED_PENDING_TO_VERIFY: "#f97316",
+    RETURNED: "#6b7280",
+    REJECTED: "#dc2626",
+    default: "#6b7280"
   };
 
-  const requesterText = (r) => r.requesterRegNo || r.requesterFullName || "-";
+  const renderCard = r => {
+    const item = r._item;
+    const bgColor = statusColorMap[item.itemStatus] || statusColorMap.default;
+
+    return (
+      <div key={`${r.requestId}-${item.requestItemId}`} className="history-card">
+        <div className="history-grid">
+          <div className="history-left">
+            <div><strong>Request ID:</strong> {r.requestId}</div>
+            <div><strong>Requester:</strong> {requesterText(r)}</div>
+            <div><strong>Lab:</strong> {r.labName || "-"}</div>
+          </div>
+          <div className="history-right">
+            <div><strong>Item:</strong> {item.equipmentName || `Equipment #${item.equipmentId}`} × {item.quantity}</div>
+            <div><strong>From:</strong> {r.fromDate || "-"}</div>
+            <div><strong>To:</strong> {r.toDate || "-"}</div>
+            <div>
+              <strong>Status:</strong>{" "}
+              <span className="status" style={{ backgroundColor: bgColor, color: "#fff" }}>
+                {item.itemStatus || "-"}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="dashboard-container">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="main-content">
         <Topbar onMenuClick={() => setSidebarOpen(true)} />
-
         <div className="content">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <h2 className="welcome">View Requests</h2>
-            <button className="btn-submit" onClick={load} disabled={loading}>
-              {loading ? "Loading..." : "Refresh"}
-            </button>
-          </div>
-
-          {error && <div style={{ color: "red", marginBottom: 10 }}>{error}</div>}
-
-          <table className="requests-table view-requests-table">
-            <thead>
-              <tr>
-                <th>Request_ID</th>
-                <th>Requester</th>
-                <th>Lab</th>
-                <th>Items</th>
-                <th>From</th>
-                <th>To</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.length > 0 ? (
-                rows.map((r) => (
-                  <tr key={r.requestId}>
-                    <td style={{ textAlign: "center" }}>{r.requestId}</td>
-                    <td>{requesterText(r)}</td>
-                    <td>{r.labName || "-"}</td>
-                    <td className="items-column">
-                      {Array.isArray(r.items) && r.items.length > 0 ? (
-                        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                          {r.items.map((it) => (
-                            <div key={it.requestItemId}>
-                              {it.equipmentName || `Equipment #${it.equipmentId}`}: {it.quantity}
-                            </div>
-                          ))}
-                        </div>
-                      ) : "-"}
-                    </td>
-                    <td style={{ textAlign: "center" }}>{r.fromDate || "-"}</td>
-                    <td style={{ textAlign: "center" }}>{r.toDate || "-"}</td>
-                    <td>
-                      {Array.isArray(r.items) && r.items.length > 0 ? (
-                        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                          {r.items.map((it) => (
-                            <span key={it.requestItemId} className={`status ${itemStatusMap[it.itemStatus] || "status-default"}`}>
-                              {it.itemStatus || "-"}
-                            </span>
-                          ))}
-                        </div>
-                      ) : "-"}
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="7" style={{ textAlign: "center" }}>
-                    No requests found
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+          {error && <div className="error-message">{error}</div>}
+          <h3>My Purchase Requests</h3>
+          {sorted.length === 0 ? <div>No requests found</div> : sorted.map(renderCard)}
         </div>
       </div>
     </div>
