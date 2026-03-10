@@ -20,45 +20,72 @@ export default function Sidebar({ isOpen, onClose }) {
   const isActive = (path) => location.pathname === path
 
   const menu = (() => {
-    switch (role) {
-      case "admin":
-        return [
-          { label: "Dashboard", path: "/admin-dashboard", icon: <AiOutlineDashboard /> },
-          { label: "Department", path: "/admin-department", icon: <AiOutlineFileText /> },
-          { label: "View Requests", path: "/admin-view-requests", icon: <AiOutlineFileText /> },
-          { label: "User Management", path: "/admin-users", icon: <AiOutlineUser /> },
-          { label: "Report", path: "/admin-report", icon: <AiOutlineFileText /> },
-          { label: "History", path: "/admin-history", icon: <AiOutlineHistory /> },
-          { label: "Help/Support", path: "/help", icon: <AiOutlineSetting /> },
-        ]
-      case "lecturer":
-        return [
-          { label: "Dashboard", path: "/lecturer-dashboard", icon: <AiOutlineDashboard /> },
-          { label: "View Requests", path: "/lecturer-view-requests", icon: <AiOutlineFileText /> },
-          { label: "History", path: "/history", icon: <AiOutlineHistory /> },
-          { label: "Help/Support", path: "/help", icon: <AiOutlineSetting /> },
-        ]
-      case "to":
-        return [
-          { label: "Dashboard", path: "/to-dashboard", icon: <AiOutlineDashboard /> },
-          { label: "View Requests", path: "/to-view-requests", icon: <AiOutlineFileText /> },
-          { label: "Help/Support", path: "/help", icon: <AiOutlineSetting /> },
-        ]
-      case "hod":
-        return [
-          { label: "Dashboard", path: "/hod-dashboard", icon: <AiOutlineDashboard /> },
-          { label: "View Requests", path: "/hod-view-requests", icon: <AiOutlineFileText /> },
-          { label: "Help/Support", path: "/help", icon: <AiOutlineSetting /> },
-        ]
-      default: // student
-        return [
-          { label: "Dashboard", path: "/student-dashboard", icon: <AiOutlineDashboard /> },
-          { label: "View Requests", path: "/view-requests", icon: <AiOutlineFileText /> },
-          { label: "History", path: "/history", icon: <AiOutlineHistory /> },
-          { label: "Help/Support", path: "/help", icon: <AiOutlineSetting /> },
-        ]
+    if (role === "admin") {
+      return [
+        { label: "Dashboard", path: "/admin-dashboard" },
+        { label: "Department", path: "/admin-department" },
+        { label: "View Requests", path: "/admin-view-requests" },
+        { label: "User Management", path: "/admin-users" },
+        { label: "Report", path: "/admin-report" },
+        { label: "History", path: "/admin-history" },
+        { label: "Help/Support", path: "/help" },
+      ]
     }
+
+    if (role === "hod") {
+      return [
+        { label: "Dashboard", path: "/hod-dashboard" },
+        { label: "My Work", path: "/hod-my-work" },
+        { label: "Department Work", path: "/hod-dept-work" },
+        { label: "Inventory", path: "/hod-inventory" },
+        { label: "Report", path: "/hod-report" },
+        { label: "Dept Purchase", path: "/hod-dept-purchase" },
+        { label: "Inspect Requests", path: "/hod-inspect" },
+        { label: "History", path: "/hod-history" },
+        { label: "Help/Support", path: "/help" },
+      ]
+    }
+
+    if (role === "lecturer") {
+      return [
+        { label: "Dashboard", path: "/lecturer-dashboard" },
+        { label: "Applications", path: "/lecturer-applications" },
+        { label: "New Requests", path: "/lecturer-new-request" },
+        { label: "View Requests", path: "/lecturer-view-requests" },
+        { label: "History", path: "/lecturer-history" },
+        { label: "Help/Support", path: "/help" },
+      ]
+    }
+
+    if (role === "to") {
+      return [
+        { label: "Dashboard", path: "/to-dashboard" },
+        { label: "Approval requests", path: "/to-approval-requests" },
+        { label: "Purchase List", path: "/to-purchase" },
+        { label: "History", path: "/to-history" },
+        { label: "Help/Support", path: "/help" },
+      ]
+    }
+
+    if (role === "instructor" || role === "staff") {
+      return [
+        { label: "Dashboard", path: "/instructor-dashboard" },
+        { label: "New Requests", path: "/instructor-new-request" },
+        { label: "View Requests", path: "/instructor-view-requests" },
+        { label: "Help/Support", path: "/help" },
+        { label: "History", path: "/instructor-history" },
+      ]
+    }
+
+    // default student
+    return [
+      { label: "Dashboard", path: "/student-dashboard" },
+      { label: "View Requests", path: "/view-requests" },
+      { label: "Help/Support", path: "/help" },
+      { label: "History", path: "/history" },
+    ]
   })()
+
 
   return (
     <>
