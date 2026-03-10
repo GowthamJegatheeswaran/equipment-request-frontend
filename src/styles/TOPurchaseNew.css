@@ -118,13 +118,16 @@ select, input {
 }
 
 .item-row .btn-cancel {
-  background: #dc2626;  /* red color for remove */
+  background: #dc2626;      /* red color */
   color: #fff;
-  padding: 4px 8px;     /* reduced width */
+  padding: 4px 10px;        /* vertical + horizontal padding */
   border-radius: 4px;
   border: none;
   cursor: pointer;
   font-size: 0.85rem;
+  display: inline-block;    /* prevent full-width stretching */
+  min-width: 60px;          /* optional: ensure consistent button size */
+  text-align: center;       /* center the text */
 }
 
 .item-row .btn-cancel:hover {
