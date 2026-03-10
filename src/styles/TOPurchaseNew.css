@@ -117,21 +117,21 @@ select, input {
   color: #111827;
 }
 
-.item-row .btn-cancel {
-  background: #dc2626;      /* red color */
+.btn-cancel {
+  background: #dc2626;
   color: #fff;
-  padding: 6px 16px;        /* match submit button padding */
-  border-radius: 6px;       /* match submit button */
+  padding: 6px 16px;
+  border-radius: 6px;
   border: none;
   cursor: pointer;
   font-weight: 600;
-  font-size: 0.95rem;       /* same as submit */
-  width: auto;              /* prevent flex stretching */
-  flex-shrink: 0;           /* prevent shrinking */
-  text-align: center;
+  font-size: 0.95rem;
+  width: auto;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.item-row .btn-cancel:hover {
+.btn-cancel:hover {
   background: #b91c1c;
 }
 
