@@ -3,15 +3,17 @@ import Sidebar from "../components/Sidebar"
 import Topbar from "../components/Topbar"
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { HodPurchaseAPI } from "../api/api"
-import { FaBox, FaClipboardList, FaListAlt, FaSearch } from "react-icons/fa" // professional icons
+import { HodPurchaseAPI, AuthAPI } from "../api/api"
+import { FaBox, FaClipboardList, FaListAlt, FaSearch } from "react-icons/fa"
 
 export default function HodDeptWork() {
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
+  const [user, setUser] = useState(null)
 
+  // Fetch department requests
   const load = async () => {
     try {
       setLoading(true)
@@ -24,8 +26,19 @@ export default function HodDeptWork() {
     }
   }
 
+  // Fetch current user
+  const fetchUser = async () => {
+    try {
+      const me = await AuthAPI.me()
+      setUser(me)
+    } catch {
+      console.error("Failed to fetch user")
+    }
+  }
+
   useEffect(() => {
     load()
+    fetchUser()
   }, [])
 
   return (
@@ -36,29 +49,29 @@ export default function HodDeptWork() {
 
         <div className="content">
           {/* Welcome Header */}
-          <h2 className="welcome-header">Welcome, NAME!</h2>
+          <h2 className="welcome">Welcome, {user?.fullName || "HOD"}!</h2>
 
           {/* Quick Actions */}
           <h3 className="section-title">Quick Actions</h3>
-          <div className="actions-grid">
-            <button className="action-btn" onClick={() => navigate("/hod-inventory")}>
-              <FaBox className="icon" /> Inventory
+          <div className="actions">
+            <button className="inventory" onClick={() => navigate("/hod-inventory")}>
+              <FaBox size={18} /> Inventory
             </button>
-            <button className="action-btn" onClick={() => navigate("/hod-report")}>
-              <FaClipboardList className="icon" /> Report
+            <button className="report" onClick={() => navigate("/hod-report")}>
+              <FaClipboardList size={18} /> Report
             </button>
-            <button className="action-btn" onClick={() => navigate("/hod-dept-purchase")}>
-              <FaListAlt className="icon" /> Department Equipment Request
+            <button className="purchase" onClick={() => navigate("/hod-dept-purchase")}>
+              <FaListAlt size={18} /> Department Equipment Request
             </button>
-            <button className="action-btn" onClick={() => navigate("/hod-inspect")}>
-              <FaSearch className="icon" /> Inspect Requests
+            <button className="inspect" onClick={() => navigate("/hod-inspect")}>
+              <FaSearch size={18} /> Inspect Requests
             </button>
           </div>
 
           {/* Recent Department Requests */}
           <div className="requests-header">
             <h3>Recent Department Requests</h3>
-            <button className="btn-submit" type="button" onClick={load} disabled={loading}>
+            <button className="btn-refresh" type="button" onClick={load} disabled={loading}>
               {loading ? "Loading..." : "Refresh"}
             </button>
           </div>

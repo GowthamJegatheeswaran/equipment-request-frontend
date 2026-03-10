@@ -1,10 +1,8 @@
-/* hodDashboard.css */
-
 /* General Container */
 .dashboard-container {
   display: flex;
   min-height: 100vh;
-  background-color: #f3f4f6;
+  background-color: #f9fafb;
 }
 
 /* Main Content */
@@ -20,10 +18,10 @@
 }
 
 /* Welcome header */
-.welcome-header {
+.welcome {
   font-size: 28px;
   font-weight: 600;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
   color: #111827;
 }
 
@@ -31,80 +29,57 @@
 .section-title {
   font-size: 20px;
   font-weight: 500;
-  margin-top: 15px;
   margin-bottom: 12px;
   color: #1f2937;
 }
 
 /* Quick Action Buttons Grid */
-.actions-grid {
+.actions {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 16px;
-  max-width: 900px;
   margin-bottom: 30px;
 }
 
-/* Professional Button Style */
-.action-btn {
+/* Professional Quick Action Buttons */
+.actions button {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  background: #1d4ed8; /* Blue */
-  color: white;
-  font-weight: 500;
-  padding: 14px 0;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
   font-size: 16px;
-  transition: all 0.2s ease;
-}
-
-.action-btn .icon {
-  font-size: 18px;
-}
-
-.action-btn:hover {
-  background: #2563eb; /* Lighter blue on hover */
-  transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-}
-
-/* Recent Requests Header */
-.requests-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 25px;
-  margin-bottom: 10px;
-}
-
-/* Refresh Button */
-.btn-submit {
-  background-color: #2563eb;
-  color: white;
-  padding: 8px 16px;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
   font-weight: 500;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 14px 0;
+  cursor: pointer;
   transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
 }
 
-.btn-submit:hover {
-  background-color: #1e40af;
+/* Colors for each action */
+.actions button.inventory { background-color: #0f172a; }
+.actions button.report { background-color: #1e40af; }
+.actions button.purchase { background-color: #2563eb; }
+.actions button.inspect { background-color: #1e3a8a; }
+
+/* Hover effect */
+.actions button:hover {
+  background-color: #3b82f6;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.15);
 }
 
 /* Requests Table */
 .requests-table {
   width: 100%;
   border-collapse: collapse;
-  background: white;
+  background: #ffffff;
   border-radius: 10px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-top: 20px;
 }
 
 .requests-table th,
@@ -115,7 +90,7 @@
 }
 
 .requests-table th {
-  background-color: #f9fafb;
+  background-color: #f3f4f6;
   font-weight: 600;
   color: #1f2937;
 }
@@ -138,19 +113,11 @@
   color: white;
 }
 
-.status.approved {
-  background-color: #16a34a;
-}
+.status.approved { background-color: #16a34a; }
+.status.pending { background-color: #ca8a04; }
+.status.rejected { background-color: #dc2626; }
 
-.status.pending {
-  background-color: #ca8a04;
-}
-
-.status.rejected {
-  background-color: #dc2626;
-}
-
-/* View Button */
+/* Buttons inside table */
 .btn-view {
   background-color: #2563eb;
   color: white;
@@ -166,5 +133,31 @@
 .btn-view:hover {
   background-color: #1e40af;
   transform: translateY(-1px);
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+}
+
+/* Refresh button */
+.btn-refresh {
+  background-color: #1e3a8a;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-refresh:hover {
+  background-color: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+}
+
+/* Requests Header */
+.requests-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
 }
