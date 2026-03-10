@@ -126,7 +126,7 @@ select, input {
   cursor: pointer;
   font-weight: 600;
   font-size: 0.95rem;       /* same as submit */
-  display: inline-block;    /* prevents stretching */
+  display: flex;    /* prevents stretching */
   min-width: 100px;         /* optional: match width of submit */
   text-align: center;
 }
