@@ -117,7 +117,7 @@ select, input {
   color: #111827;
 }
 
-.btn-cancel {
+.btn-cancel small {
   background: #dc2626;
   color: #fff;
   padding: 6px 16px;
@@ -131,7 +131,7 @@ select, input {
   flex-shrink: 0;
 }
 
-.btn-cancel:hover {
+.btn-cancel small:hover {
   background: #b91c1c;
 }
 
