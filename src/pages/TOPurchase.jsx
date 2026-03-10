@@ -1,14 +1,14 @@
 import "../styles/toDashboard.css"
 import Sidebar from "../components/Sidebar"
 import Topbar from "../components/Topbar"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { ToPurchaseAPI } from "../api/api"
 
 export default function TOPurchase() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [rows, setRows] = useState([])
-  const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false)
 
   const load = async () => {
     setError("")
@@ -27,6 +27,18 @@ export default function TOPurchase() {
 
   const fmt = (d) => (d ? String(d) : "-")
 
+  // Flatten rows to individual items
+  const sorted = useMemo(() => {
+    const out = []
+    for (const r of rows || []) {
+      const items = Array.isArray(r?.items) ? r.items : []
+      for (const it of items) {
+        out.push({ ...r, _item: it })
+      }
+    }
+    return out.sort((a, b) => (b.id || 0) - (a.id || 0))
+  }, [rows])
+
   const statusColorMap = {
     pending: "#f59e0b",
     approved: "#16a34a",
@@ -43,7 +55,6 @@ export default function TOPurchase() {
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="main-content">
         <Topbar onMenuClick={() => setSidebarOpen(true)} />
-
         <div className="content">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <h2 style={{ marginBottom: 12 }}>My Purchase Requests</h2>
@@ -52,53 +63,37 @@ export default function TOPurchase() {
             </button>
           </div>
 
-          {error && <div className="error-message" style={{ color: "red", marginBottom: 10 }}>{error}</div>}
+          {error && <div className="error-message">{error}</div>}
 
-          {rows.length === 0 && !loading && (
+          {sorted.length === 0 && !loading && (
             <div className="no-items">No purchase requests yet</div>
           )}
 
-          {rows
-            .sort((a, b) => (b.id || 0) - (a.id || 0))
-            .map((p) => (
-              <div key={p.id} className="history-card">
+          {sorted.map((p) => {
+            const item = p._item
+            const bgColor = statusColorMap[String(p.status || "").toLowerCase()] || statusColorMap.default
+
+            return (
+              <div key={`${p.id}-${item.equipmentId}`} className="history-card">
                 <div className="history-grid">
                   <div className="history-left">
                     <div><strong>Purchase ID:</strong> {p.id}</div>
                     <div><strong>Requested Date:</strong> {fmt(p.createdDate)}</div>
                     <div><strong>Received Date:</strong> {fmt(p.receivedDate)}</div>
                   </div>
-
                   <div className="history-right">
-                    <div>
-                      <strong>Items:</strong>
-                      <ul style={{ paddingLeft: "16px", margin: "4px 0" }}>
-                        {(p.items || []).map((it, idx) => (
-                          <li key={`${p.id}-${idx}`}>
-                            {it.equipmentName} × {(it.quantityRequested ?? it.quantity)}
-                          </li>
-                        ))}
-                        {(!p.items || p.items.length === 0) && <li>-</li>}
-                      </ul>
-                    </div>
+                    <div><strong>Item:</strong> {item.equipmentName} × {(item.quantityRequested ?? item.quantity)}</div>
                     <div>
                       <strong>Status:</strong>{" "}
-                      <span
-                        className="status"
-                        style={{
-                          backgroundColor: statusColorMap[String(p.status || "").toLowerCase()] || statusColorMap.default,
-                          color: "#fff",
-                          padding: "2px 8px",
-                          borderRadius: "4px",
-                        }}
-                      >
+                      <span className="status" style={{ backgroundColor: bgColor, color: "#fff" }}>
                         {p.status || "-"}
                       </span>
                     </div>
                   </div>
                 </div>
               </div>
-            ))}
+            )
+          })}
         </div>
       </div>
     </div>
