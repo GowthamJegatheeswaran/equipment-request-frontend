@@ -82,13 +82,12 @@ export default function HodDeptWork() {
                 <th>Request ID</th>
                 <th>Requested By</th>
                 <th>Status</th>
-                <th>Date</th>
+                <th>Due Date</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {rows
-                .filter((p) => String(p.status || "").toUpperCase() === "SUBMITTED_TO_HOD")
                 .sort((a, b) => (b.id || 0) - (a.id || 0))
                 .slice(0, 6)
                 .map((p) => (
@@ -112,10 +111,10 @@ export default function HodDeptWork() {
                   </tr>
                 ))}
 
-              {rows.filter((p) => String(p.status || "").toUpperCase() === "SUBMITTED_TO_HOD").length === 0 && !loading && (
+              {rows.length === 0 && (
                 <tr>
                   <td colSpan="5" style={{ textAlign: "center" }}>
-                    No pending requests
+                    No requests
                   </td>
                 </tr>
               )}
