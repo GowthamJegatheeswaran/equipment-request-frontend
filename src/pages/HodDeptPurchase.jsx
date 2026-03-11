@@ -37,7 +37,8 @@ export default function HodDeptPurchase() {
       const allArr    = Array.isArray(all) ? all : []
       const pendArr   = Array.isArray(pending) ? pending : []
       setPendingRows(pendArr)
-      setIssuedRows(allArr.filter(x => String(x.status || "").toUpperCase() === "ISSUED_BY_ADMIN"))
+      const ISSUED_STATUSES = new Set(["ISSUED_BY_ADMIN", "APPROVED_BY_ADMIN"])
+      setIssuedRows(allArr.filter(x => ISSUED_STATUSES.has(String(x.status || "").toUpperCase())))
       setAllHistory(allArr)
     } catch (e) {
       setError(e?.message || "Failed to load")

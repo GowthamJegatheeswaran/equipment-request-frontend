@@ -350,6 +350,7 @@ const TYPE_META = {
   PURCHASE_REJECTED_BY_HOD:    { icon: "❌", color: "#dc2626", bg: "rgba(220,38,38,.1)",   tag: "HOD Rejected",tc: "#dc2626", tb: "rgba(220,38,38,.1)"   },
   PURCHASE_APPROVED_BY_ADMIN:  { icon: "🏛️", color: "#16a34a", bg: "rgba(22,163,74,.1)",   tag: "Admin Issued",tc: "#16a34a", tb: "rgba(22,163,74,.1)"   },
   PURCHASE_REJECTED_BY_ADMIN:  { icon: "🏛️", color: "#dc2626", bg: "rgba(220,38,38,.1)",   tag: "Admin Rejected",tc: "#dc2626",tb: "rgba(220,38,38,.1)"   },
+  PURCHASE_RECEIVED_BY_HOD:   { icon: "📦", color: "#16a34a", bg: "rgba(22,163,74,.1)",   tag: "Received",    tc: "#16a34a", tb: "rgba(22,163,74,.1)"   },
 
   DEFAULT:                     { icon: "🔔", color: "#64748b", bg: "rgba(100,116,139,.1)",  tag: "Info",        tc: "#64748b", tb: "rgba(100,116,139,.1)"  },
 }
