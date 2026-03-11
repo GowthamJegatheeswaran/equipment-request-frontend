@@ -1,125 +1,141 @@
-import "../styles/dashboard.css"
+import "../styles/hodTheme.css"
 import Sidebar from "../components/Sidebar"
 import Topbar from "../components/Topbar"
 import { useEffect, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { LecturerRequestAPI, HodDepartmentAPI, HodPurchaseAPI, AuthAPI } from "../api/api"
+import { LecturerRequestAPI, AuthAPI } from "../api/api"
+import {
+  PieChart, Pie, Cell, BarChart, Bar,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
+} from "recharts"
 import {
   AiOutlinePlus, AiOutlineFileText,
-  AiOutlineHourglass, AiOutlineTeam,
-  AiOutlineShoppingCart, AiOutlineCheckCircle
+  AiOutlineCheckCircle, AiOutlineCloseCircle
 } from "react-icons/ai"
 import {
-  PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid,
-  LineChart, Line
-} from "recharts"
+  FaClipboardCheck, FaListAlt, FaFlask, FaSearch
+} from "react-icons/fa"
 
-const PIE_COLORS = ["#f59e0b", "#22c55e", "#ef4444", "#3b82f6", "#a855f7", "#06b6d4"]
-
-function statusLabel(s) {
-  if (!s) return "Other"
-  const sl = s.toLowerCase()
-  if (sl === "pending_lecturer_approval") return "Pending"
-  if (sl === "rejected_by_lecturer") return "Rejected"
-  if (sl.includes("issued")) return "Issued"
-  if (sl.includes("return")) return "Returned"
-  if (sl.includes("to_processing") || sl.includes("approved")) return "Approved"
-  return "Other"
+/* ── helpers ── */
+function getStatusPill(s) {
+  const v = String(s || "").toUpperCase()
+  if (v.includes("APPROVED") || v.includes("CONFIRMED") || v.includes("VERIFIED") || v.includes("RECEIVED")) return "sp sp-green"
+  if (v.includes("REJECTED") || v.includes("DAMAGED")) return "sp sp-red"
+  if (v.includes("PROCESSING") || v.includes("ISSUED")) return "sp sp-blue"
+  if (v.includes("PENDING") || v.includes("SUBMITTED")) return "sp sp-amber"
+  return "sp sp-slate"
 }
+const fmtStatus = s => String(s || "–").replace(/_/g, " ")
+
+const CHART_COLORS = ["#2563eb", "#16a34a", "#d97706", "#dc2626", "#7c3aed", "#0891b2"]
 
 export default function HodMyWork() {
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [myRows, setMyRows] = useState([])
   const [queue, setQueue] = useState([])
-  const [deptRows, setDeptRows] = useState([])
-  const [purchases, setPurchases] = useState([])
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
   useEffect(() => {
-    const load = async () => {
+    let alive = true
+    ;(async () => {
       try {
-        const [q, my, dept, p, me] = await Promise.all([
+        const [me, q, my] = await Promise.all([
+          AuthAPI.me(),
           LecturerRequestAPI.queue(),
           LecturerRequestAPI.my(),
-          HodDepartmentAPI.requests().catch(() => []),
-          HodPurchaseAPI.pending().catch(() => []),
-          AuthAPI.me(),
         ])
+        if (!alive) return
+        setUser(me)
         setQueue(Array.isArray(q) ? q : [])
         setMyRows(Array.isArray(my) ? my : [])
-        setDeptRows(Array.isArray(dept) ? dept : [])
-        setPurchases(Array.isArray(p) ? p : [])
-        setUser(me)
       } catch (e) {
-        setError(e?.message || "Failed to load")
+        if (alive) setError(e?.message || "Failed to load dashboard")
       } finally {
-        setLoading(false)
+        if (alive) setLoading(false)
       }
-    }
-    load()
+    })()
+    return () => { alive = false }
   }, [])
 
-  const counts = useMemo(() => ({
-    pendingApprovals: queue.length,
-    myRequests: myRows.length,
-    deptRequests: deptRows.length,
-    pendingPurchases: purchases.length,
-  }), [queue, myRows, deptRows, purchases])
-
-  // Pie: department request status breakdown
-  const deptPieData = useMemo(() => {
-    const map = {}
-    for (const r of deptRows) {
-      const label = statusLabel(r.status)
-      map[label] = (map[label] || 0) + 1
+  /* summary counts */
+  const stats = useMemo(() => {
+    const v = s => String(s || "").toUpperCase()
+    return {
+      pending:  queue.length,
+      total:    myRows.length,
+      approved: myRows.filter(r => v(r.status).includes("APPROVED") || v(r.status).includes("ISSUED") || v(r.status).includes("PROCESSING")).length,
+      rejected: myRows.filter(r => v(r.status).includes("REJECTED")).length,
+      returned: myRows.filter(r => v(r.status).includes("RETURN")).length,
     }
-    return Object.entries(map).map(([name, value]) => ({ name, value }))
-  }, [deptRows])
+  }, [queue, myRows])
 
-  // Bar: top requested equipment in department
-  const topEquip = useMemo(() => {
-    const map = {}
-    for (const r of deptRows) {
-      for (const it of (r.items || [])) {
-        const name = it.equipmentName || "Unknown"
-        map[name] = (map[name] || 0) + (it.quantity || 1)
-      }
+  /* pie chart — my request status breakdown */
+  const pieData = useMemo(() => {
+    const counts = {}
+    for (const r of myRows) {
+      const label = fmtStatus(r.status)
+      counts[label] = (counts[label] || 0) + 1
     }
-    return Object.entries(map)
-      .sort(([, a], [, b]) => b - a)
+    return Object.entries(counts).map(([name, value]) => ({ name, value }))
+  }, [myRows])
+
+  /* bar chart — approval queue by lab */
+  const barData = useMemo(() => {
+    const map = {}
+    for (const r of queue) {
+      const lab = r.labName || "Unknown"
+      map[lab] = (map[lab] || 0) + 1
+    }
+    return Object.entries(map).map(([lab, count]) => ({ lab: lab.replace(/ Lab$/i, ""), count }))
+  }, [queue])
+
+  /* recent approval queue */
+  const queueRows = useMemo(() =>
+    [...queue]
+      .sort((a, b) => (b.requestId || 0) - (a.requestId || 0))
       .slice(0, 6)
-      .map(([name, count]) => ({ name: name.length > 14 ? name.slice(0, 14) + "…" : name, count }))
-  }, [deptRows])
+      .map(r => {
+        const items = Array.isArray(r.items) ? r.items : []
+        const first = items[0]
+        return {
+          id: r.requestId,
+          requester: r.requesterName || r.requesterEmail || "–",
+          regNo:     r.requesterRegNo || "–",
+          role:      r.requesterRole  || "–",
+          equipment: first?.equipmentName || "–",
+          qty:       first?.quantity ?? "–",
+          extra:     items.length > 1 ? `+${items.length - 1}` : null,
+          lab:       r.labName   || "–",
+          from:      r.fromDate  || "–",
+          status:    r.status    || "–",
+        }
+      })
+  , [queue])
 
-  // Line: monthly request trend
-  const trendData = useMemo(() => {
-    const map = {}
-    for (const r of deptRows) {
-      const d = r.fromDate ? new Date(r.fromDate) : null
-      if (!d) continue
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
-      map[key] = (map[key] || 0) + 1
-    }
-    return Object.entries(map)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .slice(-8)
-      .map(([month, count]) => ({ month: month.slice(5), count }))
-  }, [deptRows])
-
-  const recentMine = useMemo(() =>
-    [...myRows].sort((a, b) => (b.requestId || 0) - (a.requestId || 0)).slice(0, 5)
+  /* recent my requests */
+  const myRecentRows = useMemo(() =>
+    [...myRows]
+      .sort((a, b) => (b.requestId || 0) - (a.requestId || 0))
+      .slice(0, 8)
+      .map(r => {
+        const items = Array.isArray(r.items) ? r.items : []
+        const first = items[0]
+        return {
+          id:        r.requestId,
+          equipment: first?.equipmentName || "–",
+          qty:       first?.quantity ?? "–",
+          extra:     items.length > 1 ? `+${items.length - 1}` : null,
+          lab:       r.labName     || "–",
+          from:      r.fromDate    || "–",
+          to:        r.toDate      || "–",
+          purpose:   r.purposeType || "–",
+          status:    r.status      || "–",
+        }
+      })
   , [myRows])
-
-  const itemsPreview = (r) => {
-    const items = Array.isArray(r?.items) ? r.items : []
-    if (!items.length) return "–"
-    if (items.length === 1) return items[0].equipmentName || "–"
-    return `${items[0].equipmentName || "–"} +${items.length - 1} more`
-  }
 
   return (
     <div className="dashboard-container">
@@ -128,122 +144,180 @@ export default function HodMyWork() {
         <Topbar onMenuClick={() => setSidebarOpen(true)} />
         <div className="content">
 
-          <h2 className="welcome">Welcome, {user?.fullName || "HOD"}!</h2>
-          <div style={{ fontSize: 13, color: "#64748b", marginBottom: 20 }}>
-            Department: <strong>{user?.department || "–"}</strong>
-          </div>
-          {error && <div className="alert alert-error">{error}</div>}
-
-          {/* Summary Cards */}
-          <div className="summary-grid">
-            <div className="summary-card pending">
-              <div className="card-icon"><AiOutlineHourglass size={22} /></div>
-              <div className="card-info"><h4>Pending Approvals</h4><p>{counts.pendingApprovals}</p></div>
-            </div>
-            <div className="summary-card total">
-              <div className="card-icon"><AiOutlineTeam size={22} /></div>
-              <div className="card-info"><h4>Dept Requests</h4><p>{counts.deptRequests}</p></div>
-            </div>
-            <div className="summary-card approved">
-              <div className="card-icon"><AiOutlineFileText size={22} /></div>
-              <div className="card-info"><h4>My Requests</h4><p>{counts.myRequests}</p></div>
-            </div>
-            <div className="summary-card processing">
-              <div className="card-icon"><AiOutlineShoppingCart size={22} /></div>
-              <div className="card-info"><h4>Pending Purchases</h4><p>{counts.pendingPurchases}</p></div>
+          {/* Header */}
+          <div className="hod-page-header">
+            <div>
+              <div className="hod-page-title">
+                Welcome back, {loading ? "…" : (user?.fullName || "HOD")}
+              </div>
+              <div className="hod-page-subtitle">
+                Dept: {user?.department || "–"} &nbsp;·&nbsp; Head of Department
+              </div>
             </div>
           </div>
 
-          {/* Charts Row 1 */}
-          <div className="charts-grid" style={{ gridTemplateColumns: "1fr 1fr" }}>
-            {deptPieData.length > 0 && (
-              <div className="chart-card">
-                <div className="chart-card-title">
-                  <span className="chart-icon">🥧</span> Dept Request Status Breakdown
+          {error && <div className="hod-alert hod-alert-error">{error}</div>}
+
+          {/* Stats */}
+          <div className="stat-grid">
+            <div className="stat-card amber">
+              <div className="stat-label">Pending Approvals</div>
+              <div className="stat-value">{loading ? "–" : stats.pending}</div>
+              <div className="stat-sub">Requests awaiting decision</div>
+            </div>
+            <div className="stat-card blue">
+              <div className="stat-label">My Total Requests</div>
+              <div className="stat-value">{loading ? "–" : stats.total}</div>
+              <div className="stat-sub">All time</div>
+            </div>
+            <div className="stat-card green">
+              <div className="stat-label">Approved / Active</div>
+              <div className="stat-value">{loading ? "–" : stats.approved}</div>
+              <div className="stat-sub">Issued or in progress</div>
+            </div>
+            <div className="stat-card red">
+              <div className="stat-label">Rejected</div>
+              <div className="stat-value">{loading ? "–" : stats.rejected}</div>
+              <div className="stat-sub">All time</div>
+            </div>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="section-hd">
+            <span className="section-hd-title">Quick Actions</span>
+          </div>
+          <div className="qa-grid">
+            <div className="qa-card qa-blue" onClick={() => navigate("/lecturer-new-request")}>
+              <div className="qa-card-icon"><AiOutlinePlus /></div>
+              <div className="qa-card-label">New Request</div>
+            </div>
+            <div className="qa-card qa-amber" onClick={() => navigate("/lecturer-applications")}>
+              <div className="qa-card-icon"><FaClipboardCheck size={18} /></div>
+              <div className="qa-card-label">Approve Requests</div>
+            </div>
+            <div className="qa-card qa-green" onClick={() => navigate("/lecturer-view-requests")}>
+              <div className="qa-card-icon"><FaListAlt size={18} /></div>
+              <div className="qa-card-label">My Requests</div>
+            </div>
+            <div className="qa-card qa-purple" onClick={() => navigate("/hod-labs")}>
+              <div className="qa-card-icon"><FaFlask size={18} /></div>
+              <div className="qa-card-label">Lab Management</div>
+            </div>
+            <div className="qa-card qa-slate" onClick={() => navigate("/hod-inspect")}>
+              <div className="qa-card-icon"><FaSearch size={18} /></div>
+              <div className="qa-card-label">Inspect Dept</div>
+            </div>
+          </div>
+
+          {/* Charts */}
+          {!loading && (myRows.length > 0 || queue.length > 0) && (
+            <div className="chart-grid-2">
+              {myRows.length > 0 && pieData.length > 0 && (
+                <div className="chart-card">
+                  <div className="chart-card-title">My Requests — Status Breakdown</div>
+                  <ResponsiveContainer width="100%" height={220}>
+                    <PieChart>
+                      <Pie data={pieData} cx="50%" cy="50%" innerRadius={55} outerRadius={85}
+                        dataKey="value" paddingAngle={3}>
+                        {pieData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                      </Pie>
+                      <Tooltip formatter={(v, n) => [v, n]} />
+                      <Legend iconType="circle" iconSize={9} wrapperStyle={{ fontSize: 11 }} />
+                    </PieChart>
+                  </ResponsiveContainer>
                 </div>
-                <ResponsiveContainer width="100%" height={210}>
-                  <PieChart>
-                    <Pie data={deptPieData} cx="50%" cy="50%" outerRadius={75} dataKey="value">
-                      {deptPieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-                    </Pie>
-                    <Tooltip />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-            {topEquip.length > 0 && (
-              <div className="chart-card">
-                <div className="chart-card-title">
-                  <span className="chart-icon">🏆</span> Top Requested Equipment
+              )}
+              {barData.length > 0 && (
+                <div className="chart-card">
+                  <div className="chart-card-title">Pending Approvals — By Lab</div>
+                  <ResponsiveContainer width="100%" height={220}>
+                    <BarChart data={barData} layout="vertical" margin={{ left: 8, right: 16, top: 4, bottom: 4 }}>
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                      <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
+                      <YAxis type="category" dataKey="lab" tick={{ fontSize: 11 }} width={110} />
+                      <Tooltip />
+                      <Bar dataKey="count" fill="#2563eb" radius={[0, 4, 4, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
-                <ResponsiveContainer width="100%" height={210}>
-                  <BarChart data={topEquip} layout="vertical" margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
-                    <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} />
-                    <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} width={95} />
-                    <Tooltip />
-                    <Bar dataKey="count" fill="#6366f1" radius={[0, 4, 4, 0]} name="Qty" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </div>
-
-          {/* Charts Row 2 — Request Trend */}
-          {trendData.length > 1 && (
-            <div className="chart-card" style={{ marginBottom: 20 }}>
-              <div className="chart-card-title">
-                <span className="chart-icon">📈</span> Department Request Trend (Monthly)
-              </div>
-              <ResponsiveContainer width="100%" height={180}>
-                <LineChart data={trendData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                  <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="count" stroke="#2563eb" strokeWidth={2} dot={{ fill: "#2563eb", r: 4 }} name="Requests" />
-                </LineChart>
-              </ResponsiveContainer>
+              )}
             </div>
           )}
 
-          {/* Quick Actions */}
-          <div className="section-label">Quick Actions</div>
-          <div className="dashboard-quick-actions">
-            <button onClick={() => navigate("/lecturer-new-request")}>
-              <AiOutlinePlus size={16} /> New Request
-            </button>
-            <button onClick={() => navigate("/lecturer-applications")}>
-              <AiOutlineFileText size={16} /> Applications ({counts.pendingApprovals})
-            </button>
-            <button onClick={() => navigate("/hod-dept-work")}>
-              <AiOutlineTeam size={16} /> Department Work
-            </button>
-            <button onClick={() => navigate("/hod-labs")}>
-              Lab Management
-            </button>
-          </div>
+          {/* Pending Approval Queue */}
+          {queueRows.length > 0 && (
+            <>
+              <div className="section-hd">
+                <span className="section-hd-title">Pending Your Approval ({stats.pending})</span>
+                <button className="hod-btn hod-btn-primary" onClick={() => navigate("/lecturer-applications")}>
+                  View All →
+                </button>
+              </div>
+              <div className="hod-table-wrap" style={{ marginBottom: 24 }}>
+                <table className="hod-table">
+                  <thead>
+                    <tr>
+                      <th>#ID</th><th>Requester</th><th>Reg No</th><th>Equipment</th>
+                      <th>Qty</th><th>Lab</th><th>From</th><th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {queueRows.map(r => (
+                      <tr key={r.id}>
+                        <td className="req-id">#{r.id}</td>
+                        <td>{r.requester}</td>
+                        <td className="muted">{r.regNo}</td>
+                        <td>
+                          {r.equipment}
+                          {r.extra && <span style={{ fontSize: 11, color: "var(--blue)", marginLeft: 5 }}>{r.extra}</span>}
+                        </td>
+                        <td className="tc">{r.qty}</td>
+                        <td>{r.lab}</td>
+                        <td className="tc muted">{r.from}</td>
+                        <td><span className={getStatusPill(r.status)}>{fmtStatus(r.status)}</span></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
 
           {/* My Recent Requests */}
-          <div className="section-card">
-            <div className="section-card-title">My Recent Requests</div>
-            <table className="requests-table">
+          <div className="section-hd">
+            <span className="section-hd-title">My Recent Requests</span>
+            {myRows.length > 8 && (
+              <button className="hod-btn hod-btn-ghost" onClick={() => navigate("/lecturer-view-requests")}>
+                View All →
+              </button>
+            )}
+          </div>
+          <div className="hod-table-wrap">
+            <table className="hod-table">
               <thead>
-                <tr><th>Equipment</th><th>From</th><th>Status</th></tr>
+                <tr>
+                  <th>#ID</th><th>Equipment</th><th>Qty</th><th>Lab</th>
+                  <th>From</th><th>To</th><th>Purpose</th><th>Status</th>
+                </tr>
               </thead>
               <tbody>
-                {loading && <tr><td colSpan="3" className="loading-state">Loading…</td></tr>}
-                {!loading && recentMine.length === 0 && <tr><td colSpan="3" className="empty-state">No requests yet</td></tr>}
-                {recentMine.map(r => (
-                  <tr key={r.requestId}>
-                    <td>{itemsPreview(r)}</td>
-                    <td>{r.fromDate || "–"}</td>
+                {loading && <tr className="empty-row"><td colSpan="8">Loading…</td></tr>}
+                {!loading && myRecentRows.length === 0 && (
+                  <tr className="empty-row"><td colSpan="8">No requests yet</td></tr>
+                )}
+                {!loading && myRecentRows.map(r => (
+                  <tr key={r.id}>
+                    <td className="req-id">#{r.id}</td>
                     <td>
-                      <span className={`status-pill ${(r.status || "").toLowerCase()}`}>
-                        {r.status?.replace(/_/g, " ") || "–"}
-                      </span>
+                      {r.equipment}
+                      {r.extra && <span style={{ fontSize: 11, color: "var(--blue)", marginLeft: 5 }}>{r.extra}</span>}
                     </td>
+                    <td className="tc">{r.qty}</td>
+                    <td>{r.lab}</td>
+                    <td className="tc muted">{r.from}</td>
+                    <td className="tc muted">{r.to}</td>
+                    <td className="muted">{r.purpose}</td>
+                    <td><span className={getStatusPill(r.status)}>{fmtStatus(r.status)}</span></td>
                   </tr>
                 ))}
               </tbody>
@@ -251,9 +325,6 @@ export default function HodMyWork() {
           </div>
 
         </div>
-        <footer className="dashboard-footer">
-          Faculty of Engineering · University of Jaffna &nbsp;|&nbsp; © 2026 ERMS
-        </footer>
       </div>
     </div>
   )
