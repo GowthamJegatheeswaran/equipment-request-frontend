@@ -3,7 +3,7 @@ import Sidebar from "../components/Sidebar"
 import Topbar from "../components/Topbar"
 import { useEffect, useMemo, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { CommonAPI, HodDepartmentAPI, HodPurchaseAPI } from "../api/api"
+import { AuthAPI, CommonAPI, HodDepartmentAPI, HodPurchaseAPI } from "../api/api"
 import { buildLabReportData, generateHodLabReportPdf } from "../utils/hodReportPdf"
 import { FaArrowLeft, FaFilePdf } from "react-icons/fa"
 
@@ -26,17 +26,20 @@ export default function HodReportLab() {
   const [requests, setRequests] = useState([])
   const [purchases, setPurchases] = useState([])
   const [labEqNames, setLabEqNames] = useState([])
+  const [me, setMe] = useState(null)
 
   useEffect(() => {
     let alive = true
     ;(async () => {
       try {
-        const [reqList, purchList, eqList] = await Promise.all([
+        const [profile, reqList, purchList, eqList] = await Promise.all([
+          AuthAPI.me(),
           HodDepartmentAPI.requests(),
           HodPurchaseAPI.my(),
           CommonAPI.equipmentByLab(labId),
         ])
         if (!alive) return
+        setMe(profile)
         setRequests(Array.isArray(reqList) ? reqList : [])
         setPurchases(Array.isArray(purchList) ? purchList : [])
         setLabEqNames(Array.isArray(eqList) ? eqList.map(e => e?.name).filter(Boolean) : [])
@@ -55,7 +58,7 @@ export default function HodReportLab() {
   )
 
   const handlePdf = () => {
-    try { generateHodLabReportPdf({ labName, studentRows, purchaseRows, summary }) }
+    try { generateHodLabReportPdf({ labName, studentRows, purchaseRows, summary, department: me?.department || "", hodName: me?.fullName || "" }) }
     catch (e) { setError(e?.message || "Failed to generate PDF") }
   }
 
