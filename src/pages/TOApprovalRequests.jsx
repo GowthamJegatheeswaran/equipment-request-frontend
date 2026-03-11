@@ -143,12 +143,45 @@ export default function TOApprovalRequests() {
         out.push({ ...r, _item: it })
       }
     }
-    // Sort by priority score descending (highest = most urgent = top of queue)
-    // Tiebreak by requestId ascending (earlier request wins if same priority)
+
+    /*
+     * Two-tier sort:
+     *
+     * TIER 1 — "Pending" items (TO has not yet acted):
+     *   APPROVED_BY_LECTURER → sorted by priority score DESC
+     *   (highest urgency shown first so TO issues the most critical request first)
+     *
+     * TIER 2 — "In-progress" items (TO already acted, waiting on someone else):
+     *   Shown below all pending items, sorted by workflow stage so TO
+     *   can quickly see what needs attention next:
+     *     RETURN_REQUESTED         → 1st  (needs TO verification now)
+     *     WAITING_TO_ISSUE         → 2nd  (TO put on hold — may need revisiting)
+     *     ISSUED_PENDING_REQUESTER_ACCEPT → 3rd (waiting on requester)
+     *     ISSUED_CONFIRMED         → 4th  (fully active, no TO action needed)
+     */
+    const STAGE_ORDER = {
+      APPROVED_BY_LECTURER:             0,   // Tier 1 — pending (sorted by priority within)
+      RETURN_REQUESTED:                 1,   // Tier 2 — needs TO action
+      WAITING_TO_ISSUE:                 2,   // Tier 2 — TO on hold
+      ISSUED_PENDING_REQUESTER_ACCEPT:  3,   // Tier 2 — waiting on requester
+      ISSUED_CONFIRMED:                 4,   // Tier 2 — completed, monitoring only
+    }
+
     return out.sort((a, b) => {
-      const pa = b.priorityScore ?? 0
-      const pb = a.priorityScore ?? 0
-      if (pa !== pb) return pa - pb
+      const sa = STAGE_ORDER[a._item.itemStatus] ?? 99
+      const sb = STAGE_ORDER[b._item.itemStatus] ?? 99
+
+      // Different tiers → put lower stage number first
+      if (sa !== sb) return sa - sb
+
+      // Both are APPROVED_BY_LECTURER (Tier 1) → sort by priority score DESC
+      if (a._item.itemStatus === "APPROVED_BY_LECTURER") {
+        const pa = b.priorityScore ?? 0
+        const pb = a.priorityScore ?? 0
+        if (pa !== pb) return pa - pb
+      }
+
+      // Same tier, same status → earlier request first (stable order)
       return (a.requestId || 0) - (b.requestId || 0)
     })
   }, [rows])
@@ -238,7 +271,7 @@ export default function TOApprovalRequests() {
                       <span style={{ color: "var(--to-blue)", fontWeight: 800 }}>#{r.requestId}</span>
                       <span style={{ fontWeight: 400, fontSize: 13, color: "var(--to-text-muted)" }}>·</span>
                       <span>{it.equipmentName || `Equipment #${it.equipmentId}`}</span>
-                      <PriorityBadge score={r.priorityScore} />
+                      {it.itemStatus === "APPROVED_BY_LECTURER" && <PriorityBadge score={r.priorityScore} />}
                     </div>
                     <div style={{ marginTop: 3, fontSize: 12, color: "var(--to-text-muted)" }}>
                       {r.requesterFullName || r.requesterRegNo || "Unknown"} · {r.requesterRole || "—"}
