@@ -1,268 +1,497 @@
+import "../styles/instructorTheme.css"
 import { useEffect, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import Sidebar from "../components/Sidebar"
 import Topbar from "../components/Topbar"
-import "../styles/studentDashboard.css"
-import "../styles/newRequestModal.css"
-import { CommonAPI, StudentRequestAPI } from "../api/api"
+import { AuthAPI, CommonAPI, StudentRequestAPI } from "../api/api"
 
-// UI says "Instructor", backend role is STAFF.
+/*
+  NewRequestDTO (backend):
+    labId        : Long
+    lecturerId   : Long
+    purpose      : PurposeType  (LABS | LECTURE | RESEARCH | PROJECT | PERSONAL)
+    purposeNote  : String (optional)
+    fromDate     : LocalDate  (YYYY-MM-DD)
+    toDate       : LocalDate  (YYYY-MM-DD)
+    items        : [{ equipmentId: Long, quantity: int }]
+
+  Flow:
+    1. Load AuthAPI.me() → get department
+    2. Load CommonAPI.labs(department) → filter to user's dept
+    3. Load CommonAPI.lecturers(department)
+    4. On labId change → CommonAPI.equipmentByLab(labId) → populate equipment select
+    5. User adds items to cart, then submits
+*/
+
 const PURPOSE_OPTIONS = ["LABS", "LECTURE", "RESEARCH", "PROJECT", "PERSONAL"]
 
 export default function InstructorNewRequest() {
   const navigate = useNavigate()
-
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [open, setOpen] = useState(true)
 
-  const [department, setDepartment] = useState(localStorage.getItem("department") || "")
-  const [labId, setLabId] = useState("")
+  /* User / dept */
+  const [me,  setMe]  = useState(null)
+  const [dept, setDept] = useState("")
 
-  const [lecturers, setLecturers] = useState([])
-  const [lecturerId, setLecturerId] = useState("")
+  /* Lab */
+  const [labs,       setLabs]       = useState([])
+  const [labId,      setLabId]      = useState("")
+  const [labsLoading, setLabsLoading] = useState(true)
 
-  const [purpose, setPurpose] = useState("")
+  /* Lecturers */
+  const [lecturers,    setLecturers]    = useState([])
+  const [lecturerId,   setLecturerId]   = useState("")
+  const [lecLoading,   setLecLoading]   = useState(false)
+
+  /* Equipment */
+  const [equipOptions,  setEquipOptions]  = useState([])
+  const [equipmentId,   setEquipmentId]   = useState("")
+  const [eqLoading,     setEqLoading]     = useState(false)
+  const [qty,           setQty]           = useState("1")
+
+  /* Request fields */
+  const [purpose,     setPurpose]     = useState("")
   const [purposeNote, setPurposeNote] = useState("")
-  const [fromDate, setFromDate] = useState("")
-  const [toDate, setToDate] = useState("")
+  const [fromDate,    setFromDate]    = useState("")
+  const [toDate,      setToDate]      = useState("")
 
-  const [items, setItems] = useState([{ equipmentId: "", quantity: "" }])
-  const [error, setError] = useState("")
-  const [success, setSuccess] = useState("")
-  const [loading, setLoading] = useState(false)
+  /* Cart */
+  const [items, setItems] = useState([])
 
+  /* UI state */
+  const [submitting, setSubmitting] = useState(false)
+  const [error,      setError]      = useState("")
+  const [success,    setSuccess]    = useState("")
+
+  /* ── Step 1: Load user, labs, lecturers ── */
   useEffect(() => {
-    let mounted = true
-    setLecturers([])
-    setLecturerId("")
+    const init = async () => {
+      try {
+        setLabsLoading(true)
+        const user = await AuthAPI.me()
+        setMe(user)
+        const department = user.department || ""
+        setDept(department)
+
+        const [allLabs, allLec] = await Promise.all([
+          CommonAPI.labs(department),
+          CommonAPI.lecturers(department),
+        ])
+
+        setLabs(Array.isArray(allLabs) ? allLabs : [])
+        setLecturers(Array.isArray(allLec) ? allLec : [])
+        if (Array.isArray(allLec) && allLec.length) {
+          setLecturerId(String(allLec[0].id))
+        }
+      } catch (e) {
+        setError(e?.message || "Failed to load form data")
+      } finally {
+        setLabsLoading(false)
+      }
+    }
+    init()
+  }, [])
+
+  /* ── Step 2: Load equipment when lab changes ── */
+  useEffect(() => {
+    if (!labId) { setEquipOptions([]); setEquipmentId(""); return }
+    const loadEquip = async () => {
+      try {
+        setEqLoading(true)
+        setEquipOptions([])
+        setEquipmentId("")
+        const list = (await CommonAPI.equipmentByLab(labId)) || []
+        const active = list.filter(e => e.active !== false)
+        setEquipOptions(active)
+        if (active.length) setEquipmentId(String(active[0].id))
+      } catch (e) {
+        setError(e?.message || "Failed to load equipment")
+      } finally {
+        setEqLoading(false)
+      }
+    }
+    loadEquip()
+  }, [labId])
+
+  const selectedEquip = useMemo(
+    () => equipOptions.find(e => String(e.id) === String(equipmentId)),
+    [equipOptions, equipmentId]
+  )
+
+  /* ── Cart actions ── */
+  const addToCart = () => {
     setError("")
-    if (!department) return
+    if (!equipmentId) return setError("Please select equipment")
+    const q = parseInt(qty, 10)
+    if (!q || q <= 0) return setError("Quantity must be a positive number")
 
-    CommonAPI.lecturers(department)
-      .then((list) => {
-        if (!mounted) return
-        setLecturers(Array.isArray(list) ? list : [])
-      })
-      .catch((e) => {
-        if (!mounted) return
-        setError(e?.message || "Failed to load lecturers")
-      })
-
-    return () => {
-      mounted = false
-    }
-  }, [department])
-
-  useEffect(() => {
-    if (!open) return
-    const onKeyDown = (e) => {
-      if (e.key === "Escape") handleClose()
-    }
-    window.addEventListener("keydown", onKeyDown)
-    return () => window.removeEventListener("keydown", onKeyDown)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open])
-
-  const handleClose = () => {
-    setOpen(false)
-    navigate(-1)
+    setItems(prev => {
+      const existing = prev.find(it => String(it.equipmentId) === String(equipmentId))
+      if (existing) {
+        return prev.map(it =>
+          String(it.equipmentId) === String(equipmentId)
+            ? { ...it, quantity: it.quantity + q }
+            : it
+        )
+      }
+      return [...prev, {
+        equipmentId:  Number(equipmentId),
+        equipmentName: selectedEquip?.name || `Equipment #${equipmentId}`,
+        itemType:     selectedEquip?.itemType || "",
+        quantity:     q,
+      }]
+    })
+    setQty("1")
   }
 
-  const canSubmit = useMemo(() => {
-    if (!department) return false
-    if (!labId || Number(labId) <= 0) return false
-    if (!lecturerId) return false
-    if (!purpose) return false
-    if (!fromDate || !toDate) return false
-    if (new Date(fromDate).getTime() > new Date(toDate).getTime()) return false
-    const validItems = items.filter((i) => Number(i.equipmentId) > 0 && Number(i.quantity) > 0)
-    return validItems.length > 0
-  }, [department, labId, lecturerId, purpose, fromDate, toDate, items])
+  const removeItem = (eid) =>
+    setItems(prev => prev.filter(it => String(it.equipmentId) !== String(eid)))
 
-  const updateItem = (idx, patch) => {
-    setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, ...patch } : it)))
+  const updateItemQty = (eid, newQty) => {
+    const q = parseInt(newQty, 10)
+    if (!q || q <= 0) return
+    setItems(prev => prev.map(it =>
+      String(it.equipmentId) === String(eid) ? { ...it, quantity: q } : it
+    ))
   }
 
-  const addRow = () => setItems((prev) => [...prev, { equipmentId: "", quantity: "" }])
-  const removeRow = (idx) => setItems((prev) => prev.filter((_, i) => i !== idx))
-
+  /* ── Validation ── */
   const validate = () => {
-    if (!department) return "Department is required."
-    if (!labId || Number(labId) <= 0) return "Lab ID is required (must be a number)."
-    if (!lecturerId) return "Lecturer is required."
-    if (!purpose) return "Purpose is required."
-    if (!fromDate || !toDate) return "From date and To date are required."
-    if (new Date(fromDate).getTime() > new Date(toDate).getTime()) return "To date must be after From date."
-    const validItems = items
-      .map((i) => ({ equipmentId: Number(i.equipmentId), quantity: Number(i.quantity) }))
-      .filter((i) => Number.isInteger(i.equipmentId) && i.equipmentId > 0 && Number.isInteger(i.quantity) && i.quantity > 0)
-    if (validItems.length === 0) return "Add at least one item (Equipment ID + Quantity)."
+    if (!labId) return "Please select a lab."
+    if (!lecturerId) return "Please select a lecturer."
+    if (!purpose) return "Please select a purpose."
+    if (!fromDate) return "From date is required."
+    if (!toDate) return "To date is required."
+    if (new Date(fromDate) > new Date(toDate)) return "To date must be on or after From date."
+    if (items.length === 0) return "Add at least one equipment item."
     return ""
   }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setError("")
-    setSuccess("")
+  const canSubmit = useMemo(() => {
+    if (!labId || !lecturerId || !purpose || !fromDate || !toDate) return false
+    if (new Date(fromDate) > new Date(toDate)) return false
+    return items.length > 0
+  }, [labId, lecturerId, purpose, fromDate, toDate, items])
 
+  /* ── Submit ── */
+  const handleSubmit = async () => {
+    setError(""); setSuccess("")
     const msg = validate()
     if (msg) return setError(msg)
 
-    const payload = {
-      labId: Number(labId),
-      lecturerId: Number(lecturerId),
-      purpose,
-      purposeNote: purposeNote?.trim() || null,
-      fromDate,
-      toDate,
-      items: items
-        .map((i) => ({ equipmentId: Number(i.equipmentId), quantity: Number(i.quantity) }))
-        .filter((i) => i.equipmentId > 0 && i.quantity > 0),
-    }
-
     try {
-      setLoading(true)
+      setSubmitting(true)
+      const payload = {
+        labId:      Number(labId),
+        lecturerId: Number(lecturerId),
+        purpose,
+        purposeNote: purposeNote.trim() || null,
+        fromDate,
+        toDate,
+        items: items.map(it => ({ equipmentId: it.equipmentId, quantity: it.quantity })),
+      }
       await StudentRequestAPI.create(payload)
-      setSuccess("Request submitted successfully.")
-      setTimeout(() => navigate("/instructor-dashboard"), 400)
-    } catch (err) {
-      setError(err?.message || "Failed to submit request")
+      setSuccess("Request submitted successfully! Awaiting lecturer approval.")
+      setItems([])
+      setPurpose(""); setPurposeNote(""); setFromDate(""); setToDate(""); setQty("1")
+    } catch (e) {
+      setError(e?.message || "Failed to submit request")
     } finally {
-      setLoading(false)
+      setSubmitting(false)
     }
   }
+
+  const disabled = submitting || labsLoading
 
   return (
     <div className="dashboard-container">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-
       <div className="main-content">
         <Topbar onMenuClick={() => setSidebarOpen(true)} />
-
         <div className="content">
-          {open && (
-            <div className="nrf-backdrop" onMouseDown={handleClose}>
-              <div className="nrf-modal" onMouseDown={(e) => e.stopPropagation()}>
-                <div className="nrf-header">
-                  <h3>New Request Form</h3>
-                </div>
 
-                <form className="nrf-body" onSubmit={handleSubmit}>
-                  <div className="nrf-grid">
-                    <label className="nrf-label">Department</label>
-                    <select className="nrf-input" value={department} onChange={(e) => setDepartment(e.target.value)}>
-                      <option value="">-- Select Department --</option>
-                      <option value="CE">CE</option>
-                      <option value="EEE">EEE</option>
-                    </select>
-
-                    <label className="nrf-label">Lab ID (from DB)</label>
-                    <input
-                      className="nrf-input"
-                      type="number"
-                      min="1"
-                      value={labId}
-                      onChange={(e) => setLabId(e.target.value)}
-                      placeholder="Example: 1"
-                    />
-
-                    <label className="nrf-label">Lecturer</label>
-                    <select
-                      className="nrf-input"
-                      value={lecturerId}
-                      onChange={(e) => setLecturerId(e.target.value)}
-                      disabled={!department}
-                    >
-                      <option value="">-- Select Lecturer --</option>
-                      {lecturers.map((l) => (
-                        <option key={l.id} value={l.id}>
-                          {l.fullName} ({l.email})
-                        </option>
-                      ))}
-                    </select>
-
-                    <label className="nrf-label">Purpose</label>
-                    <select className="nrf-input" value={purpose} onChange={(e) => setPurpose(e.target.value)}>
-                      <option value="">-- Select Purpose --</option>
-                      {PURPOSE_OPTIONS.map((p) => (
-                        <option key={p} value={p}>
-                          {p}
-                        </option>
-                      ))}
-                    </select>
-
-                    <label className="nrf-label">Purpose Note (optional)</label>
-                    <input
-                      className="nrf-input"
-                      value={purposeNote}
-                      onChange={(e) => setPurposeNote(e.target.value)}
-                      placeholder="Any extra details (optional)"
-                    />
-
-                    <label className="nrf-label">From Date</label>
-                    <input className="nrf-input" type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
-
-                    <label className="nrf-label">To Date</label>
-                    <input className="nrf-input" type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
-                  </div>
-
-                  <div style={{ marginTop: 16 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <h4 style={{ margin: 0 }}>Items</h4>
-                      <button type="button" className="nrf-btn" onClick={addRow}>
-                        + Add Item
-                      </button>
-                    </div>
-
-                    <div style={{ marginTop: 10 }}>
-                      {items.map((it, idx) => (
-                        <div key={idx} style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 10, marginBottom: 10 }}>
-                          <input
-                            className="nrf-input"
-                            type="number"
-                            min="1"
-                            placeholder="Equipment ID (from DB)"
-                            value={it.equipmentId}
-                            onChange={(e) => updateItem(idx, { equipmentId: e.target.value })}
-                          />
-                          <input
-                            className="nrf-input"
-                            type="number"
-                            min="1"
-                            placeholder="Quantity"
-                            value={it.quantity}
-                            onChange={(e) => updateItem(idx, { quantity: e.target.value })}
-                          />
-                          {items.length > 1 ? (
-                            <button type="button" className="nrf-btn nrf-btn-danger" onClick={() => removeRow(idx)}>
-                              Remove
-                            </button>
-                          ) : (
-                            <div />
-                          )}
-                        </div>
-                      ))}
-                      <div style={{ fontSize: 12, opacity: 0.85 }}>
-                        Tip: Equipment IDs come from the <b>equipment</b> table (column <b>id</b>). Labs come from the <b>labs</b> table.
-                      </div>
-                    </div>
-                  </div>
-
-                  {error && <div className="nrf-error" style={{ marginTop: 12 }}>{error}</div>}
-                  {success && <div style={{ marginTop: 12, color: "#0a7" }}>{success}</div>}
-
-                  <div className="nrf-footer">
-                    <button type="button" className="nrf-btn nrf-btn-secondary" onClick={handleClose}>
-                      Cancel
-                    </button>
-                    <button type="submit" className="nrf-btn" disabled={!canSubmit || loading}>
-                      {loading ? "Submitting..." : "Submit"}
-                    </button>
-                  </div>
-                </form>
+          {/* Page Header */}
+          <div className="inst-page-header">
+            <div className="inst-page-header-left">
+              <div className="inst-page-title">New Equipment Request</div>
+              <div className="inst-page-subtitle">
+                {me ? `${me.fullName} · ${dept || ""}` : "Submit an equipment request to your lecturer for approval"}
               </div>
             </div>
+            <div className="inst-page-actions">
+              <button className="inst-btn inst-btn-ghost" onClick={() => navigate("/instructor-dashboard")}>
+                ← Dashboard
+              </button>
+            </div>
+          </div>
+
+          {error   && <div className="inst-alert inst-alert-error">{error}</div>}
+          {success && (
+            <div className="inst-alert inst-alert-success">
+              {success}
+              <button
+                className="inst-btn inst-btn-success inst-btn-sm"
+                style={{ marginLeft: 12 }}
+                onClick={() => navigate("/instructor-view-requests")}
+              >
+                View My Requests
+              </button>
+            </div>
           )}
+
+          {labsLoading ? (
+            <div className="inst-empty">
+              <div className="inst-empty-icon">⏳</div>
+              <div className="inst-empty-text">Loading form data…</div>
+            </div>
+          ) : (
+            <>
+              {/* ── Section 1: Lab & Lecturer ── */}
+              <div className="inst-form-card">
+                <div className="inst-form-section-title">Lab & Lecturer</div>
+                <div className="inst-form-grid inst-form-grid-2">
+                  <div className="inst-form-group">
+                    <label className="inst-label">Lab *</label>
+                    <select
+                      className="inst-select"
+                      value={labId}
+                      onChange={e => setLabId(e.target.value)}
+                      disabled={disabled}
+                    >
+                      <option value="">— Select Lab —</option>
+                      {labs.map(l => (
+                        <option key={l.id} value={String(l.id)}>{l.name}</option>
+                      ))}
+                    </select>
+                    {labs.length === 0 && !labsLoading && (
+                      <div style={{ fontSize: 12, color: "var(--inst-text-muted)", marginTop: 4 }}>
+                        No labs found for your department.
+                      </div>
+                    )}
+                  </div>
+                  <div className="inst-form-group">
+                    <label className="inst-label">Lecturer *</label>
+                    <select
+                      className="inst-select"
+                      value={lecturerId}
+                      onChange={e => setLecturerId(e.target.value)}
+                      disabled={disabled}
+                    >
+                      <option value="">— Select Lecturer —</option>
+                      {lecturers.map(l => (
+                        <option key={l.id} value={String(l.id)}>
+                          {l.fullName}{l.email ? ` (${l.email})` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* ── Section 2: Request Details ── */}
+              <div className="inst-form-card">
+                <div className="inst-form-section-title">Request Details</div>
+                <div className="inst-form-grid inst-form-grid-2">
+                  <div className="inst-form-group">
+                    <label className="inst-label">Purpose *</label>
+                    <select
+                      className="inst-select"
+                      value={purpose}
+                      onChange={e => setPurpose(e.target.value)}
+                      disabled={disabled}
+                    >
+                      <option value="">— Select Purpose —</option>
+                      {PURPOSE_OPTIONS.map(p => (
+                        <option key={p} value={p}>{p}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="inst-form-group">
+                    <label className="inst-label">Purpose Note (optional)</label>
+                    <input
+                      className="inst-input"
+                      value={purposeNote}
+                      onChange={e => setPurposeNote(e.target.value)}
+                      placeholder="Any additional context…"
+                      disabled={disabled}
+                    />
+                  </div>
+                  <div className="inst-form-group">
+                    <label className="inst-label">From Date *</label>
+                    <input
+                      className="inst-input"
+                      type="date"
+                      value={fromDate}
+                      onChange={e => setFromDate(e.target.value)}
+                      disabled={disabled}
+                    />
+                  </div>
+                  <div className="inst-form-group">
+                    <label className="inst-label">To Date *</label>
+                    <input
+                      className="inst-input"
+                      type="date"
+                      value={toDate}
+                      min={fromDate || undefined}
+                      onChange={e => setToDate(e.target.value)}
+                      disabled={disabled}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* ── Section 3: Equipment ── */}
+              <div className="inst-form-card">
+                <div className="inst-form-section-title">Add Equipment</div>
+                <div className="inst-form-grid inst-form-grid-3" style={{ alignItems: "flex-end" }}>
+                  <div className="inst-form-group">
+                    <label className="inst-label">Equipment *</label>
+                    <select
+                      className="inst-select"
+                      value={equipmentId}
+                      onChange={e => setEquipmentId(e.target.value)}
+                      disabled={disabled || !labId || eqLoading || equipOptions.length === 0}
+                    >
+                      {!labId && <option value="">Select a lab first</option>}
+                      {labId && eqLoading && <option>Loading…</option>}
+                      {labId && !eqLoading && equipOptions.length === 0 && (
+                        <option value="">No equipment in this lab</option>
+                      )}
+                      {equipOptions.map(e => (
+                        <option key={e.id} value={String(e.id)}>
+                          {e.name}{e.availableQty != null ? ` (Avail: ${e.availableQty})` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="inst-form-group">
+                    <label className="inst-label">Quantity *</label>
+                    <input
+                      className="inst-input"
+                      type="number"
+                      min="1"
+                      value={qty}
+                      onChange={e => setQty(e.target.value)}
+                      disabled={disabled || !equipmentId}
+                    />
+                  </div>
+                  <div className="inst-form-group">
+                    <button
+                      className="inst-btn inst-btn-primary"
+                      onClick={addToCart}
+                      disabled={disabled || !equipmentId || !labId}
+                      style={{ alignSelf: "flex-end" }}
+                    >
+                      + Add to Cart
+                    </button>
+                  </div>
+                </div>
+
+                {/* Equipment info preview */}
+                {selectedEquip && (
+                  <div style={{
+                    marginTop: 12, padding: "10px 14px",
+                    background: "var(--inst-teal-pale)", border: "1px solid var(--inst-teal-bd)",
+                    borderRadius: "var(--inst-r-sm)", fontSize: 13, color: "var(--inst-teal)",
+                    fontFamily: "Plus Jakarta Sans, sans-serif",
+                  }}>
+                    <strong>{selectedEquip.name}</strong>
+                    {selectedEquip.category && <span style={{ marginLeft: 10, opacity: .8 }}>· {selectedEquip.category}</span>}
+                    {selectedEquip.itemType  && <span style={{ marginLeft: 10, opacity: .8 }}>· {selectedEquip.itemType}</span>}
+                    {selectedEquip.availableQty != null && (
+                      <span style={{ marginLeft: 10, opacity: .8 }}>· Available: {selectedEquip.availableQty}</span>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* ── Cart ── */}
+              <div className="inst-section-hd">
+                <div className="inst-section-title">
+                  Request Cart
+                  <span style={{
+                    marginLeft: 8, fontSize: 11, fontWeight: 700,
+                    background: items.length ? "var(--inst-teal-pale)" : "var(--inst-slate-100)",
+                    color: items.length ? "var(--inst-teal)" : "var(--inst-slate-500)",
+                    padding: "2px 8px", borderRadius: 10,
+                  }}>
+                    {items.length} item{items.length !== 1 ? "s" : ""}
+                  </span>
+                </div>
+                {items.length > 0 && (
+                  <button
+                    className="inst-btn inst-btn-ghost inst-btn-sm"
+                    onClick={() => setItems([])}
+                    disabled={submitting}
+                  >
+                    Clear All
+                  </button>
+                )}
+              </div>
+
+              <div className="inst-item-list">
+                <div className="inst-item-list-hd">Equipment · Quantity · Actions</div>
+                {items.length === 0 && (
+                  <div className="inst-item-empty">
+                    No items added — select equipment above and click "Add to Cart"
+                  </div>
+                )}
+                {items.map(it => (
+                  <div key={it.equipmentId} className="inst-item-row">
+                    <div>
+                      <div className="inst-item-name">{it.equipmentName}</div>
+                      {it.itemType && (
+                        <div className="inst-item-meta">{it.itemType}</div>
+                      )}
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <input
+                        className="inst-input"
+                        type="number"
+                        min="1"
+                        value={it.quantity}
+                        onChange={e => updateItemQty(it.equipmentId, e.target.value)}
+                        style={{ width: 72 }}
+                        disabled={submitting}
+                      />
+                      <span className="inst-muted" style={{ fontSize: 13 }}>units</span>
+                      <button
+                        className="inst-btn inst-btn-ghost inst-btn-sm"
+                        onClick={() => removeItem(it.equipmentId)}
+                        disabled={submitting}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* ── Submit ── */}
+              {items.length > 0 && (
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 8 }}>
+                  <button
+                    className="inst-btn inst-btn-ghost"
+                    onClick={() => navigate("/instructor-dashboard")}
+                    disabled={submitting}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="inst-btn inst-btn-primary"
+                    onClick={handleSubmit}
+                    disabled={!canSubmit || submitting}
+                  >
+                    {submitting
+                      ? "Submitting…"
+                      : `Submit Request (${items.length} item${items.length !== 1 ? "s" : ""})`
+                    }
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+
         </div>
       </div>
     </div>
