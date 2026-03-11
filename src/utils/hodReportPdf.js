@@ -506,7 +506,7 @@ export function generateHodLabReportPdf({
 
   <!-- ── LETTERHEAD ── -->
   <div class="letterhead">
-    <div class="letterhead-logo">UJ</div>
+    <div class="letterhead-logo">UOJ</div>
     <div class="letterhead-text">
       <div class="letterhead-uni">University of Jaffna</div>
       <div class="letterhead-faculty">Faculty of Engineering</div>
@@ -641,7 +641,8 @@ export function generateHodLabReportPdf({
     <span class="section-heading-text">Section 3 — Observations & Remarks</span>
   </div>
   <div style="border:1px solid #e2e8f0;border-radius:4px;padding:12px 14px;min-height:60px;margin-bottom:24px;font-family:Arial,sans-serif;font-size:10px;color:#94a3b8;font-style:italic">
-    (This section may be completed manually by the Head of Department before submission.)
+
+  
   </div>
 
   <!-- ── SIGNATURE BLOCK ── -->
