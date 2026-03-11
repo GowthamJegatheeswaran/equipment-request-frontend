@@ -4,11 +4,15 @@
   padding: 0;
 }
 
-html, body, #root {
-  min-height: 100vh;
-  background: #050e24;
-  color: #e2e8f0;
-  font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+html {
+  scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
+}
+
+/* No global background here — each page's own CSS sets its background.
+   home.css  → #050e24 dark navy  (public home + login pages)
+   hodTheme.css / lecturerTheme.css etc → #f1f5f9 light (dashboard pages) */
+body {
+  min-height: 100vh;
   overflow-x: hidden;
 }

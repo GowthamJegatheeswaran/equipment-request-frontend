@@ -27,29 +27,14 @@
   --r-lg:       20px;
 }
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-html {
-  scroll-behavior: smooth;
-  background: #050e24 !important;
-}
-
-/* Force dark background — overrides Vite defaults and any index.css resets */
-body,
-#root,
-#root > * {
-  font-family: 'Outfit', system-ui, sans-serif;
-  background: #050e24;
-  color: #e2e8f0;
-  line-height: 1.6;
-  overflow-x: hidden;
-}
-
-/* Home page wrapper — belt + suspenders on the background */
+/* .home-page scopes ALL dark styles — does NOT affect dashboard pages */
 .home-page {
-  background: #050e24 !important;
+  background: #050e24;
   min-height: 100vh;
   color: #e2e8f0;
+  font-family: 'Outfit', system-ui, sans-serif;
+  line-height: 1.6;
+  overflow-x: hidden;
 }
 
 /* ================================================================
