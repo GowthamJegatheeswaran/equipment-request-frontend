@@ -174,3 +174,136 @@
   align-items: center;
   margin-top: 20px;
 }
+/* =====================
+   HOD INVENTORY
+   ===================== */
+
+.inventory-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.inventory-lab-count {
+  background: #e0e7ff;
+  color: #3730a3;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+.inventory-loading {
+  text-align: center;
+  color: #6b7280;
+  padding: 32px 0;
+  font-size: 15px;
+}
+
+.inventory-empty {
+  text-align: center;
+  color: #9ca3af;
+  padding: 20px 0;
+  font-size: 14px;
+}
+
+/* Lab Card */
+.inventory-lab-card {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+  margin-bottom: 24px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+
+/* Lab Card Header */
+.inventory-lab-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #0f172a;
+  padding: 14px 20px;
+}
+
+.inventory-lab-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: 0.3px;
+}
+
+.inventory-lab-badge {
+  background: rgba(255, 255, 255, 0.15);
+  color: #e2e8f0;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 12px;
+}
+
+/* Equipment Table inside card */
+.inventory-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.inventory-table th {
+  background: #f8fafc;
+  padding: 11px 16px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.inventory-table td {
+  padding: 11px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 14px;
+  color: #374151;
+  vertical-align: middle;
+}
+
+.inventory-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.inventory-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+.inventory-row-low {
+  background: #fff7f7 !important;
+}
+
+.inventory-index {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 13px;
+  width: 40px;
+}
+
+.inventory-name {
+  text-align: left;
+  font-weight: 500;
+  color: #111827;
+}
+
+.inventory-qty {
+  text-align: center;
+}
+
+/* Available qty badge */
+.inventory-avail {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.inventory-avail.ok  { background: #dcfce7; color: #15803d; }
+.inventory-avail.low { background: #fee2e2; color: #dc2626; }

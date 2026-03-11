@@ -1,17 +1,15 @@
-import "../styles/studentDashboard.css"
+import "../styles/hodDashboard.css"
 import Sidebar from "../components/Sidebar"
 import Topbar from "../components/Topbar"
 import { useEffect, useMemo, useState } from "react"
 import { AuthAPI, CommonAPI } from "../api/api"
 
-// HOD Inventory: show equipment in all labs of HOD department
 export default function HodInventory() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
-
   const [labs, setLabs] = useState([])
-  const [equipment, setEquipment] = useState([]) // {labName, name, totalQty, availableQty}
+  const [equipment, setEquipment] = useState([])
 
   const load = async () => {
     setError("")
@@ -24,13 +22,16 @@ export default function HodInventory() {
       const rows = []
       for (const lab of labList) {
         const eq = (await CommonAPI.equipmentByLab(lab.id)) || []
-        eq.forEach((e) => rows.push({
-          id: `${lab.id}-${e.id}`,
-          labName: lab.name,
-          equipment: e.name,
-          totalQty: e.totalQty,
-          availableQty: e.availableQty,
-        }))
+        eq.forEach((e) =>
+          rows.push({
+            id: `${lab.id}-${e.id}`,
+            labId: lab.id,
+            labName: lab.name,
+            equipment: e.name,
+            totalQty: e.totalQty,
+            availableQty: e.availableQty,
+          })
+        )
       }
       setEquipment(rows)
     } catch (e) {
@@ -44,9 +45,23 @@ export default function HodInventory() {
     load()
   }, [])
 
-  const rows = useMemo(() => {
-    return [...equipment].sort((a, b) => (a.labName + a.equipment).localeCompare(b.labName + b.equipment))
-  }, [equipment])
+  // Group equipment by lab
+  const labGroups = useMemo(() => {
+    const map = {}
+    for (const lab of labs) {
+      map[lab.id] = { labName: lab.name, items: [] }
+    }
+    for (const row of equipment) {
+      if (map[row.labId]) {
+        map[row.labId].items.push(row)
+      }
+    }
+    // Sort items within each lab
+    for (const key of Object.keys(map)) {
+      map[key].items.sort((a, b) => a.equipment.localeCompare(b.equipment))
+    }
+    return Object.values(map)
+  }, [labs, equipment])
 
   return (
     <div className="dashboard-container">
@@ -55,50 +70,69 @@ export default function HodInventory() {
         <Topbar onMenuClick={() => setSidebarOpen(true)} />
 
         <div className="content">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-            <h2 style={{ marginBottom: 12 }}>Inventory</h2>
-            <button className="btn-submit" type="button" onClick={load} disabled={loading}>
-              {loading ? "Loading..." : "Refresh"}
-            </button>
+          <div className="inventory-header">
+            <h2 className="welcome" style={{ marginBottom: 0 }}>Inventory</h2>
+            <span className="inventory-lab-count">{labs.length} Lab{labs.length !== 1 ? "s" : ""}</span>
           </div>
 
-          <div style={{ color: "#555", marginBottom: 10 }}>
-            Labs: {labs.length}
-          </div>
+          {error && (
+            <div className="error-message" style={{ color: "red", marginBottom: 12 }}>{error}</div>
+          )}
 
-          {error && <div className="error-message" style={{ color: "red", marginBottom: 10 }}>{error}</div>}
+          {loading && (
+            <div className="inventory-loading">Loading inventory...</div>
+          )}
 
-          <table className="requests-table">
-            <thead>
-              <tr>
-                <th>Location</th>
-                <th>Equipment</th>
-                <th style={{ textAlign: "center" }}>Total_Quantity</th>
-                <th style={{ textAlign: "center" }}>Available_Qty</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.id}>
-                  <td>{r.labName}</td>
-                  <td>{r.equipment}</td>
-                  <td style={{ textAlign: "center" }}>{r.totalQty}</td>
-                  <td style={{ textAlign: "center" }}>{String(r.availableQty).padStart(2, "0")}</td>
-                </tr>
-              ))}
-              {rows.length === 0 && !loading && (
-                <tr>
-                  <td colSpan="4" style={{ textAlign: "center" }}>No inventory</td>
-                </tr>
+          {!loading && labGroups.map((group) => (
+            <div key={group.labName} className="inventory-lab-card">
+              {/* Lab Header */}
+              <div className="inventory-lab-header">
+                <span className="inventory-lab-name">{group.labName}</span>
+                <span className="inventory-lab-badge">{group.items.length} item{group.items.length !== 1 ? "s" : ""}</span>
+              </div>
+
+              {/* Equipment Table inside card */}
+              {group.items.length === 0 ? (
+                <div className="inventory-empty">No equipment in this lab</div>
+              ) : (
+                <table className="inventory-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Equipment</th>
+                      <th>Total Qty</th>
+                      <th>Available Qty</th>
+                      <th>In Use</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {group.items.map((r, idx) => {
+                      const inUse = (r.totalQty || 0) - (r.availableQty || 0)
+                      const isLow = r.availableQty === 0
+                      return (
+                        <tr key={r.id} className={isLow ? "inventory-row-low" : ""}>
+                          <td className="inventory-index">{idx + 1}</td>
+                          <td className="inventory-name">{r.equipment}</td>
+                          <td className="inventory-qty">{r.totalQty ?? "-"}</td>
+                          <td className="inventory-qty">
+                            <span className={`inventory-avail ${isLow ? "low" : "ok"}`}>
+                              {r.availableQty ?? "-"}
+                            </span>
+                          </td>
+                          <td className="inventory-qty">{inUse >= 0 ? inUse : "-"}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
               )}
-            </tbody>
-          </table>
-        </div>
+            </div>
+          ))}
 
-        <footer>
-          Faculty of Engineering | University of Jaffna <br />
-          © Copyright 2026. All Rights Reserved - ERS
-        </footer>
+          {!loading && labGroups.length === 0 && (
+            <div className="inventory-empty" style={{ marginTop: 32 }}>No labs found for your department</div>
+          )}
+        </div>
       </div>
     </div>
   )
