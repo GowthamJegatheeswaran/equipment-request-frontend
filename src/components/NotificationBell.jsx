@@ -327,14 +327,31 @@ function timeAgo(dateStr) {
   return new Date(dateStr).toLocaleDateString()
 }
 
+// Keys match backend NotificationType enum exactly
 const TYPE_META = {
-  REQUEST_APPROVED:  { icon: "✅", color: "#16a34a", bg: "rgba(22,163,74,.1)",  tag: "Approved",  tc: "#16a34a", tb: "rgba(22,163,74,.1)"  },
-  REQUEST_REJECTED:  { icon: "❌", color: "#dc2626", bg: "rgba(220,38,38,.1)",  tag: "Rejected",  tc: "#dc2626", tb: "rgba(220,38,38,.1)"  },
-  REQUEST_ISSUED:    { icon: "📦", color: "#2563eb", bg: "rgba(37,99,235,.1)",  tag: "Issued",    tc: "#2563eb", tb: "rgba(37,99,235,.1)"  },
-  RETURN_RECEIVED:   { icon: "↩️",  color: "#7c3aed", bg: "rgba(124,58,237,.1)", tag: "Returned",  tc: "#7c3aed", tb: "rgba(124,58,237,.1)" },
-  PURCHASE_APPROVED: { icon: "🛒", color: "#0891b2", bg: "rgba(8,145,178,.1)",  tag: "Purchase",  tc: "#0891b2", tb: "rgba(8,145,178,.1)"  },
-  ITEM_WAITING:      { icon: "⏳", color: "#d97706", bg: "rgba(217,119,6,.1)",  tag: "Waiting",   tc: "#d97706", tb: "rgba(217,119,6,.1)"  },
-  DEFAULT:           { icon: "🔔", color: "#64748b", bg: "rgba(100,116,139,.1)", tag: "Info",     tc: "#64748b", tb: "rgba(100,116,139,.1)"},
+  // ── Equipment request workflow ────────────────────────────────
+  REQUEST_SUBMITTED:           { icon: "📋", color: "#2563eb", bg: "rgba(37,99,235,.1)",   tag: "Submitted",   tc: "#2563eb", tb: "rgba(37,99,235,.1)"   },
+  REQUEST_APPROVED:            { icon: "✅", color: "#16a34a", bg: "rgba(22,163,74,.1)",   tag: "Approved",    tc: "#16a34a", tb: "rgba(22,163,74,.1)"   },
+  REQUEST_REJECTED:            { icon: "❌", color: "#dc2626", bg: "rgba(220,38,38,.1)",   tag: "Rejected",    tc: "#dc2626", tb: "rgba(220,38,38,.1)"   },
+
+  // ── Issue workflow ────────────────────────────────────────────
+  ISSUE_READY:                 { icon: "📦", color: "#7c3aed", bg: "rgba(124,58,237,.1)",  tag: "Ready",       tc: "#7c3aed", tb: "rgba(124,58,237,.1)"  },
+  ISSUE_ACCEPTED:              { icon: "🤝", color: "#0891b2", bg: "rgba(8,145,178,.1)",   tag: "Confirmed",   tc: "#0891b2", tb: "rgba(8,145,178,.1)"   },
+  TO_WAIT:                     { icon: "⏸", color: "#d97706", bg: "rgba(217,119,6,.1)",   tag: "On Hold",     tc: "#d97706", tb: "rgba(217,119,6,.1)"   },
+
+  // ── Return workflow ───────────────────────────────────────────
+  RETURN_SUBMITTED:            { icon: "↩️",  color: "#7c3aed", bg: "rgba(124,58,237,.1)",  tag: "Return",      tc: "#7c3aed", tb: "rgba(124,58,237,.1)"  },
+  RETURN_VERIFIED:             { icon: "☑️",  color: "#16a34a", bg: "rgba(22,163,74,.1)",   tag: "Verified",    tc: "#16a34a", tb: "rgba(22,163,74,.1)"   },
+  DAMAGE_REPORTED:             { icon: "⚠️",  color: "#dc2626", bg: "rgba(220,38,38,.1)",   tag: "Damaged",     tc: "#dc2626", tb: "rgba(220,38,38,.1)"   },
+
+  // ── Purchase workflow ─────────────────────────────────────────
+  PURCHASE_SUBMITTED:          { icon: "🛒", color: "#0891b2", bg: "rgba(8,145,178,.1)",   tag: "Purchase",    tc: "#0891b2", tb: "rgba(8,145,178,.1)"   },
+  PURCHASE_APPROVED_BY_HOD:    { icon: "✅", color: "#16a34a", bg: "rgba(22,163,74,.1)",   tag: "HOD Approved",tc: "#16a34a", tb: "rgba(22,163,74,.1)"   },
+  PURCHASE_REJECTED_BY_HOD:    { icon: "❌", color: "#dc2626", bg: "rgba(220,38,38,.1)",   tag: "HOD Rejected",tc: "#dc2626", tb: "rgba(220,38,38,.1)"   },
+  PURCHASE_APPROVED_BY_ADMIN:  { icon: "🏛️", color: "#16a34a", bg: "rgba(22,163,74,.1)",   tag: "Admin Issued",tc: "#16a34a", tb: "rgba(22,163,74,.1)"   },
+  PURCHASE_REJECTED_BY_ADMIN:  { icon: "🏛️", color: "#dc2626", bg: "rgba(220,38,38,.1)",   tag: "Admin Rejected",tc: "#dc2626",tb: "rgba(220,38,38,.1)"   },
+
+  DEFAULT:                     { icon: "🔔", color: "#64748b", bg: "rgba(100,116,139,.1)",  tag: "Info",        tc: "#64748b", tb: "rgba(100,116,139,.1)"  },
 }
 
 function getMeta(type) {

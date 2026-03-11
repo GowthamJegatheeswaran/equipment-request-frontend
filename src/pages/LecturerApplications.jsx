@@ -48,6 +48,22 @@ function AppCard({ r, onApproveItem, onRejectItem, onApproveAll, onRejectAll, ac
           </span>
           <span className="lt-sp lt-sp-pending">Pending Approval</span>
           <span className="lt-sp lt-sp-slate">{r.requesterRole || "–"}</span>
+          {r.priorityScore != null && (
+            <span style={{
+              display: "inline-flex", alignItems: "center", gap: 4,
+              padding: "2px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700,
+              background: r.priorityScore >= 80 ? "rgba(220,38,38,.12)"
+                        : r.priorityScore >= 60 ? "rgba(217,119,6,.12)"
+                        : r.priorityScore >= 40 ? "rgba(37,99,235,.12)"
+                        : "rgba(100,116,139,.12)",
+              color: r.priorityScore >= 80 ? "#dc2626"
+                   : r.priorityScore >= 60 ? "#d97706"
+                   : r.priorityScore >= 40 ? "#2563eb"
+                   : "#64748b"
+            }}>
+              🎯 {r.priorityScore >= 80 ? "Critical" : r.priorityScore >= 60 ? "High" : r.priorityScore >= 40 ? "Medium" : "Low"} · {r.priorityScore}
+            </span>
+          )}
         </div>
         {/* Approve / reject whole request */}
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -191,7 +207,9 @@ export default function LecturerApplications() {
     try {
       setLoading(true)
       const list = await LecturerRequestAPI.queue()
-      setRows(Array.isArray(list) ? list : [])
+      const sorted = (Array.isArray(list) ? list : [])
+        .sort((a, b) => (b.priorityScore ?? 0) - (a.priorityScore ?? 0))
+      setRows(sorted)
     } catch (e) { setError(e?.message || "Failed to load approval queue") }
     finally { setLoading(false) }
   }

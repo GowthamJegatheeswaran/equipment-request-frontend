@@ -81,6 +81,26 @@ const STATUS_FILTERS = [
   { value: "RETURN_REQUESTED",                label: "Return Requested" },
 ]
 
+
+/* ── Priority badge ── */
+function PriorityBadge({ score }) {
+  if (score == null) return null
+  let color = "#64748b", bg = "rgba(100,116,139,.12)", label = "Low"
+  if (score >= 80) { color = "#dc2626"; bg = "rgba(220,38,38,.12)"; label = "Critical" }
+  else if (score >= 60) { color = "#d97706"; bg = "rgba(217,119,6,.12)"; label = "High" }
+  else if (score >= 40) { color = "#2563eb"; bg = "rgba(37,99,235,.12)"; label = "Medium" }
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 4,
+      padding: "2px 8px", borderRadius: 6,
+      background: bg, color, fontSize: 11, fontWeight: 700,
+      border: `1px solid ${color}22`
+    }}>
+      🎯 {label} {score}
+    </span>
+  )
+}
+
 export default function TOApprovalRequests() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [rows, setRows] = useState([])
@@ -123,7 +143,14 @@ export default function TOApprovalRequests() {
         out.push({ ...r, _item: it })
       }
     }
-    return out.sort((a, b) => (b.requestId || 0) - (a.requestId || 0))
+    // Sort by priority score descending (highest = most urgent = top of queue)
+    // Tiebreak by requestId ascending (earlier request wins if same priority)
+    return out.sort((a, b) => {
+      const pa = b.priorityScore ?? 0
+      const pb = a.priorityScore ?? 0
+      if (pa !== pb) return pa - pb
+      return (a.requestId || 0) - (b.requestId || 0)
+    })
   }, [rows])
 
   const filtered = useMemo(() => {
@@ -211,6 +238,7 @@ export default function TOApprovalRequests() {
                       <span style={{ color: "var(--to-blue)", fontWeight: 800 }}>#{r.requestId}</span>
                       <span style={{ fontWeight: 400, fontSize: 13, color: "var(--to-text-muted)" }}>·</span>
                       <span>{it.equipmentName || `Equipment #${it.equipmentId}`}</span>
+                      <PriorityBadge score={r.priorityScore} />
                     </div>
                     <div style={{ marginTop: 3, fontSize: 12, color: "var(--to-text-muted)" }}>
                       {r.requesterFullName || r.requesterRegNo || "Unknown"} · {r.requesterRole || "—"}
@@ -235,6 +263,10 @@ export default function TOApprovalRequests() {
                     <div>
                       <div className="to-mi-label">Lab</div>
                       <div className="to-mi-value">{r.labName || "—"}</div>
+                    </div>
+                    <div>
+                      <div className="to-mi-label">Purpose</div>
+                      <div className="to-mi-value">{r.purpose || "—"}</div>
                     </div>
                     <div>
                       <div className="to-mi-label">From → To</div>
