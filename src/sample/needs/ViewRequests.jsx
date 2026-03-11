@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react"
 import Sidebar from "../components/Sidebar"
 import Topbar from "../components/Topbar"
-import "../styles/toDashboard.css"
-import { LecturerRequestAPI, StudentRequestAPI } from "../api/api"
+import "../styles/studentDashboard.css"
+import { StudentRequestAPI } from "../api/api"
 
-export default function LecturerViewRequests() {
+export default function ViewRequests() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
@@ -16,10 +16,10 @@ export default function LecturerViewRequests() {
     setError("")
     try {
       setLoading(true)
-      const list = await LecturerRequestAPI.my()
+      const list = await StudentRequestAPI.my()
       setRows(Array.isArray(list) ? list : [])
     } catch (e) {
-      setError(e?.message || "Failed to load lecturer requests")
+      setError(e?.message || "Failed to load my requests")
     } finally {
       setLoading(false)
     }
@@ -30,10 +30,7 @@ export default function LecturerViewRequests() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const itemText = (it) => {
-    if (!it) return "-"
-    return `${it.equipmentName || `Equipment #${it.equipmentId}`}: ${it.quantity}`
-  }
+  const itemText = (it) => it ? `${it.equipmentName || `Equipment #${it.equipmentId}`}: ${it.quantity}` : "-"
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -48,7 +45,7 @@ export default function LecturerViewRequests() {
       .filter((r) => (statusFilter === "All" ? true : String(r._itemStatus) === statusFilter))
       .filter((r) => {
         if (!q) return true
-        const text = `${r.labName || ""} ${r.purpose || ""} ${itemText(r._item)}`.toLowerCase()
+        const text = `${r.labName || ""} ${r.lecturerName || ""} ${r.purpose || ""} ${itemText(r._item)}`.toLowerCase()
         return text.includes(q)
       })
       .sort((a, b) => (b.requestId || 0) - (a.requestId || 0))
@@ -93,9 +90,10 @@ export default function LecturerViewRequests() {
         </button>
       )
     }
-    return <span style={{ color: "#777" }}>—</span>
+    return <span style={{ color: "#777" }}></span>
   }
 
+  // Build status filter options dynamically
   const statusOptions = useMemo(() => {
     const set = new Set()
     for (const r of rows || []) {
@@ -110,81 +108,114 @@ export default function LecturerViewRequests() {
   return (
     <div className="dashboard-container">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-
       <div className="main-content">
         <Topbar onMenuClick={() => setSidebarOpen(true)} />
-
         <div className="content">
           <h2 style={{ marginBottom: "15px" }}>My Requests</h2>
+          {error && <div className="error-message" style={{ color: "red", marginBottom: 10 }}>{error}</div>}
 
-          {error && (
-            <div className="error-message" style={{ color: "red", marginBottom: 10 }}>
-              {error}
-            </div>
-          )}
-
-          {/* SEARCH + FILTER BAR */}
           <div className="request-toolbar">
             <input
               className="request-search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search lab, purpose, equipment..."
+              placeholder="Search lab, lecturer, purpose, items..."
             />
-
             <select className="request-filter" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-              {statusOptions.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
+              {statusOptions.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
 
-          {filtered.length === 0 && (
-            <div style={{ textAlign: "center", color: "#777" }}>
-              {loading ? "Loading..." : "No requests"}
+          <table className="requests-table view-requests-table">
+  <thead>
+    <tr>
+      <th>Request_ID</th>
+      <th>Lab</th>
+      <th>Lecturer</th>
+      <th>Items</th>
+      <th>From</th>
+      <th>To</th>
+      <th>Status</th>
+      <th style={{ textAlign: "center" }}>Action</th>
+    </tr>
+  </thead>
+  <tbody>
+    {rows.map((r) => (
+      <tr key={r.requestId}>
+        <td style={{ textAlign: "center" }}>{r.requestId}</td>
+        <td>{r.labName || "-"}</td>
+        <td>{r.lecturerName || "-"}</td>
+        {/* Items Column */}
+<td className="items-column">
+  {Array.isArray(r.items) && r.items.length > 0 ? (
+    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+      {r.items.map((it) => (
+        <div key={it.requestItemId}>
+          {it.equipmentName || `Equipment #${it.equipmentId}`}: {it.quantity}
+        </div>
+      ))}
+    </div>
+  ) : (
+    "-"
+  )}
+</td>
+        <td style={{ textAlign: "center" }}>{r.fromDate || "-"}</td>
+        <td style={{ textAlign: "center" }}>{r.toDate || "-"}</td>
+
+        {/* Status Column */}
+        <td style={{ textAlign: "center" }}>
+          {Array.isArray(r.items) && r.items.length > 0 ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              {r.items.map((it) => {
+                const statusMap = {
+                  REJECTED_BY_LECTURER: "rejected_by_lecturer",
+                  APPROVED: "approved",
+                  ISSUED_PENDING_REQUESTER_ACCEPT: "issued",
+                  ISSUED_CONFIRMED: "accepted",
+                  RETURN_REQUESTED: "returnrequested",
+                  RETURNED: "returned",
+                  PENDING: "pending",
+                  REJECTED: "rejected",
+                };
+
+                const statusClass = statusMap[it.itemStatus?.trim()] || "status-default";
+
+                return (
+                  <span key={it.requestItemId} className={`status ${statusClass}`}>
+                    {it.itemStatus || "-"}
+                  </span>
+                );
+              })}
             </div>
+          ) : (
+            "-"
           )}
-          {filtered.map((r) => (
-            <div key={`${r.requestId}-${r?._item?.requestItemId || "x"}`} className="history-card">
-              <div className="history-grid">
-                <div className="history-left">
-                  <div><strong>Request ID:</strong> {r.requestId}</div>
-                  <div><strong>Lab:</strong> {r.labName || "-"}</div>
-                  <div><strong>Purpose:</strong> {r.purpose || "-"}</div>
-                  <div><strong>From:</strong> {r.fromDate || "-"}</div>
-                  <div><strong>To:</strong> {r.toDate || "-"}</div>
-                </div>
-                <div className="history-right">
-                  <div><strong>Item:</strong> {itemText(r._item)}</div>
-                  <div>
-                    <strong>Status:</strong>{" "}
-                    <span
-                      className="status"
-                      style={{
-                        backgroundColor:
-                          r._itemStatus === "ISSUED_CONFIRMED" ? "#16A34A"
-                          : r._itemStatus === "ISSUED_PENDING_REQUESTER_ACCEPT" ? "#FBBF24"
-                          : r._itemStatus === "RETURNED" ? "#2563EB"
-                          : r._itemStatus === "RETURNREQUESTED" ? "#F97316"
-                          : r._itemStatus === "REJECTED_BY_LECTURER" ? "#DC2626"
-                          : "#6B7280",
-                        color: r._itemStatus === "ISSUED_PENDING_REQUESTER_ACCEPT" ? "#111" : "white",
-                      }}
-                    >
-                      {r._itemStatus || "-"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              {renderAction(r) && (
-                <div className="history-actions">
-                  {renderAction(r)}
-                </div>
+        </td>
+
+        {/* Action Column */}
+        <td style={{ textAlign: "center" }}>
+          {Array.isArray(r.items) && r.items.length > 0 ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              {r.items.map((it) =>
+                renderAction({ _item: it, _itemStatus: it.itemStatus })
               )}
             </div>
-          ))}
+          ) : (
+            "-"
+          )}
+        </td>
+      </tr>
+    ))}
+
+    {rows.length === 0 && !loading && (
+      <tr>
+        <td colSpan="8" style={{ textAlign: "center" }}>
+          No requests found
+        </td>
+      </tr>
+    )}
+  </tbody>
+</table>
         </div>
       </div>
     </div>

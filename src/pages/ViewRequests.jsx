@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import Sidebar from "../components/Sidebar"
 import Topbar from "../components/Topbar"
-import "../styles/studentDashboard.css"
+import "../styles/toDashboard.css"
 import { StudentRequestAPI } from "../api/api"
 
 export default function ViewRequests() {
@@ -126,96 +126,49 @@ export default function ViewRequests() {
             </select>
           </div>
 
-          <table className="requests-table view-requests-table">
-  <thead>
-    <tr>
-      <th>Request_ID</th>
-      <th>Lab</th>
-      <th>Lecturer</th>
-      <th>Items</th>
-      <th>From</th>
-      <th>To</th>
-      <th>Status</th>
-      <th style={{ textAlign: "center" }}>Action</th>
-    </tr>
-  </thead>
-  <tbody>
-    {rows.map((r) => (
-      <tr key={r.requestId}>
-        <td style={{ textAlign: "center" }}>{r.requestId}</td>
-        <td>{r.labName || "-"}</td>
-        <td>{r.lecturerName || "-"}</td>
-        {/* Items Column */}
-<td className="items-column">
-  {Array.isArray(r.items) && r.items.length > 0 ? (
-    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-      {r.items.map((it) => (
-        <div key={it.requestItemId}>
-          {it.equipmentName || `Equipment #${it.equipmentId}`}: {it.quantity}
-        </div>
-      ))}
-    </div>
-  ) : (
-    "-"
-  )}
-</td>
-        <td style={{ textAlign: "center" }}>{r.fromDate || "-"}</td>
-        <td style={{ textAlign: "center" }}>{r.toDate || "-"}</td>
-
-        {/* Status Column */}
-        <td style={{ textAlign: "center" }}>
-          {Array.isArray(r.items) && r.items.length > 0 ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-              {r.items.map((it) => {
-                const statusMap = {
-                  REJECTED_BY_LECTURER: "rejected_by_lecturer",
-                  APPROVED: "approved",
-                  ISSUED_PENDING_REQUESTER_ACCEPT: "issued",
-                  ISSUED_CONFIRMED: "accepted",
-                  RETURN_REQUESTED: "returnrequested",
-                  RETURNED: "returned",
-                  PENDING: "pending",
-                  REJECTED: "rejected",
-                };
-
-                const statusClass = statusMap[it.itemStatus?.trim()] || "status-default";
-
-                return (
-                  <span key={it.requestItemId} className={`status ${statusClass}`}>
-                    {it.itemStatus || "-"}
-                  </span>
-                );
-              })}
-            </div>
-          ) : (
-            "-"
+          {filtered.length === 0 && !loading && (
+            <div style={{ textAlign: "center", color: "#777" }}>No requests found</div>
           )}
-        </td>
+          {filtered.map((r) => {
+            const it = r._item
+            const statusMap = {
+              REJECTED_BY_LECTURER: "rejected_by_lecturer",
+              APPROVED: "approved",
+              ISSUED_PENDING_REQUESTER_ACCEPT: "issued",
+              ISSUED_CONFIRMED: "accepted",
+              RETURN_REQUESTED: "returnrequested",
+              RETURNED: "returned",
+              PENDING: "pending",
+              REJECTED: "rejected",
+            }
+            const statusClass = statusMap[it?.itemStatus?.trim()] || "status-default"
 
-        {/* Action Column */}
-        <td style={{ textAlign: "center" }}>
-          {Array.isArray(r.items) && r.items.length > 0 ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-              {r.items.map((it) =>
-                renderAction({ _item: it, _itemStatus: it.itemStatus })
-              )}
-            </div>
-          ) : (
-            "-"
-          )}
-        </td>
-      </tr>
-    ))}
-
-    {rows.length === 0 && !loading && (
-      <tr>
-        <td colSpan="8" style={{ textAlign: "center" }}>
-          No requests found
-        </td>
-      </tr>
-    )}
-  </tbody>
-</table>
+            return (
+              <div key={`${r.requestId}-${it?.requestItemId || "x"}`} className="history-card">
+                <div className="history-grid">
+                  <div className="history-left">
+                    <div><strong>Request ID:</strong> {r.requestId}</div>
+                    <div><strong>Lab:</strong> {r.labName || "-"}</div>
+                    <div><strong>Lecturer:</strong> {r.lecturerName || "-"}</div>
+                  </div>
+                  <div className="history-right">
+                    <div><strong>Item:</strong> {itemText(it)}</div>
+                    <div><strong>From:</strong> {r.fromDate || "-"}</div>
+                    <div><strong>To:</strong> {r.toDate || "-"}</div>
+                    <div>
+                      <strong>Status:</strong>{" "}
+                      <span className={`status ${statusClass}`}>{it?.itemStatus || "-"}</span>
+                    </div>
+                  </div>
+                </div>
+                {renderAction(r) && String(renderAction(r)?.props?.children || "") !== "" && (
+                  <div className="history-actions">
+                    {renderAction(r)}
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </div>
       </div>
     </div>

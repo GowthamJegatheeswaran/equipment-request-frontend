@@ -1,4 +1,4 @@
-import "../styles/toDashboard.css"
+import "../styles/studentDashboard.css"
 import Sidebar from "../components/Sidebar"
 import Topbar from "../components/Topbar"
 import { useEffect, useMemo, useState } from "react"
@@ -91,33 +91,48 @@ export default function LecturerApplications() {
 
           {error && <div className="error-message" style={{ color: "red", marginBottom: 10 }}>{error}</div>}
 
-          {pending.length === 0 && !loading && (
-            <div style={{ textAlign: "center", color: "#777" }}>No pending applications</div>
-          )}
-          {pending.map((r) => (
-            <div key={`${r.requestId}-${r?._item?.requestItemId}`} className="history-card">
-              <div className="history-grid">
-                <div className="history-left">
-                  <div><strong>Request ID:</strong> {r.requestId}</div>
-                  <div><strong>Requester:</strong> {requesterText(r)}</div>
-                  <div><strong>Lab:</strong> {r.labName || "-"}</div>
-                </div>
-                <div className="history-right">
-                  <div><strong>Item:</strong> {renderItems(r)}</div>
-                  <div><strong>From:</strong> {fmt(r.fromDate)}</div>
-                  <div><strong>To:</strong> {fmt(r.toDate)}</div>
-                </div>
-              </div>
-              <div className="history-actions">
-                <button type="button" className="btn-submit small" onClick={() => actApprove(r?._item?.requestItemId)}>
-                  Approve
-                </button>
-                <button type="button" className="btn-cancel small" onClick={() => actReject(r?._item?.requestItemId)}>
-                  Reject
-                </button>
-              </div>
-            </div>
-          ))}
+          <table className="requests-table">
+            <thead>
+              <tr>
+                <th>Request_ID</th>
+                <th>Requester</th>
+                <th>Lab</th>
+                <th>Items</th>
+                <th>From</th>
+                <th>To</th>
+                <th style={{ textAlign: "center" }}>Actions</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {pending.map((r) => (
+                <tr key={`${r.requestId}-${r?._item?.requestItemId}`}>
+                  <td style={{ textAlign: "center" }}>{r.requestId}</td>
+                  <td>{requesterText(r)}</td>
+                  <td>{r.labName || "-"}</td>
+                  <td>{renderItems(r)}</td>
+                  <td style={{ textAlign: "center" }}>{fmt(r.fromDate)}</td>
+                  <td style={{ textAlign: "center" }}>{fmt(r.toDate)}</td>
+                  <td style={{ textAlign: "center" }}>
+                    <button type="button" className="btn-submit" onClick={() => actApprove(r?._item?.requestItemId)} style={{ marginRight: 8 }}>
+                      Approve
+                    </button>
+                    <button type="button" className="btn-cancel" onClick={() => actReject(r?._item?.requestItemId)}>
+                      Reject
+                    </button>
+                  </td>
+                </tr>
+              ))}
+
+              {pending.length === 0 && !loading && (
+                <tr>
+                  <td colSpan="7" style={{ textAlign: "center" }}>
+                    No pending applications
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

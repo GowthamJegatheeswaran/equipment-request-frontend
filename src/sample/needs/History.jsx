@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
-import "../styles/toDashboard.css"
+import "../styles/studentDashboard.css"
 import Sidebar from "../components/Sidebar"
 import Topbar from "../components/Topbar"
 import { StudentRequestAPI } from "../api/api"
@@ -81,31 +81,45 @@ export default function History() {
         <div className="content">
           {error && <div className="error-message" style={{ color: "red", marginBottom: 10 }}>{error}</div>}
 
-          {history.length === 0 && !loading && (
-            <div style={{ textAlign: "center", color: "#777" }}>No returned requests yet</div>
-          )}
-          {history.map((r) => (
-            <div key={`${r.requestId}-${r?._item?.requestItemId || "x"}`} className="history-card">
-              <div className="history-grid">
-                <div className="history-left">
-                  <div><strong>Request ID:</strong> {r.requestId}</div>
-                  <div><strong>Lab:</strong> {r.labName || "-"}</div>
-                  <div><strong>Lecturer:</strong> {r.lecturerName || "-"}</div>
-                </div>
-                <div className="history-right">
-                  <div><strong>Item:</strong> {renderItems(r)}</div>
-                  <div><strong>From:</strong> {r.fromDate || "-"}</div>
-                  <div><strong>To:</strong> {r.toDate || "-"}</div>
-                  <div>
-                    <strong>Status:</strong>{" "}
+          <table className="requests-table view-requests-table">
+            <thead>
+              <tr>
+                <th>Request_ID</th>
+                <th>Lab</th>
+                <th>Lecturer</th>
+                <th>Items</th>
+                <th style={{ textAlign: "center" }}>From</th>
+                <th style={{ textAlign: "center" }}>To</th>
+                <th style={{ textAlign: "center" }}>Status</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {history.map((r) => (
+                <tr key={`${r.requestId}-${r?._item?.requestItemId || "x"}`}>
+                  <td style={{ textAlign: "center" }}>{r.requestId}</td>
+                  <td>{r.labName || "-"}</td>
+                  <td>{r.lecturerName || "-"}</td>
+                  <td>{renderItems(r)}</td>
+                  <td style={{ textAlign: "center" }}>{r.fromDate || "-"}</td>
+                  <td style={{ textAlign: "center" }}>{r.toDate || "-"}</td>
+                  <td style={{ textAlign: "center" }}>
                     <span className={`status ${getStatusClass(r._itemStatus)}`}>
                       {r._itemStatus || "-"}
                     </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
+                  </td>
+                </tr>
+              ))}
+
+              {history.length === 0 && !loading && (
+                <tr>
+                  <td colSpan="7" style={{ textAlign: "center" }}>
+                    No returned requests yet
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

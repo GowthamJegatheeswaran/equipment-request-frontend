@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import Sidebar from "../components/Sidebar"
 import Topbar from "../components/Topbar"
-import "../styles/toDashboard.css"
+import "../styles/studentDashboard.css"
 import { LecturerRequestAPI, StudentRequestAPI } from "../api/api"
 
 export default function LecturerViewRequests() {
@@ -141,50 +141,71 @@ export default function LecturerViewRequests() {
             </select>
           </div>
 
-          {filtered.length === 0 && (
-            <div style={{ textAlign: "center", color: "#777" }}>
-              {loading ? "Loading..." : "No requests"}
-            </div>
-          )}
-          {filtered.map((r) => (
-            <div key={`${r.requestId}-${r?._item?.requestItemId || "x"}`} className="history-card">
-              <div className="history-grid">
-                <div className="history-left">
-                  <div><strong>Request ID:</strong> {r.requestId}</div>
-                  <div><strong>Lab:</strong> {r.labName || "-"}</div>
-                  <div><strong>Purpose:</strong> {r.purpose || "-"}</div>
-                  <div><strong>From:</strong> {r.fromDate || "-"}</div>
-                  <div><strong>To:</strong> {r.toDate || "-"}</div>
-                </div>
-                <div className="history-right">
-                  <div><strong>Item:</strong> {itemText(r._item)}</div>
-                  <div>
-                    <strong>Status:</strong>{" "}
+          <table className="requests-table">
+            <thead>
+              <tr>
+                <th>Request_ID</th>
+                <th>Lab</th>
+                <th>Purpose</th>
+                <th>From</th>
+                <th>To</th>
+                <th>Item</th>
+                <th style={{ textAlign: "center" }}>Status</th>
+                <th style={{ textAlign: "center" }}>Action</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {filtered.map((r) => (
+                <tr key={`${r.requestId}-${r?._item?.requestItemId || "x"}`}>
+                  <td style={{ textAlign: "center" }}>{r.requestId}</td>
+                  <td>{r.labName || "-"}</td>
+                  <td>{r.purpose || "-"}</td>
+                  <td style={{ textAlign: "center" }}>{r.fromDate || "-"}</td>
+                  <td style={{ textAlign: "center" }}>{r.toDate || "-"}</td>
+                  <td>{itemText(r._item)}</td>
+                  <td style={{ textAlign: "center" }}>
                     <span
-                      className="status"
+                      className={`status ${String(r._itemStatus || "").toLowerCase()}`}
                       style={{
                         backgroundColor:
-                          r._itemStatus === "ISSUED_CONFIRMED" ? "#16A34A"
-                          : r._itemStatus === "ISSUED_PENDING_REQUESTER_ACCEPT" ? "#FBBF24"
-                          : r._itemStatus === "RETURNED" ? "#2563EB"
-                          : r._itemStatus === "RETURNREQUESTED" ? "#F97316"
-                          : r._itemStatus === "REJECTED_BY_LECTURER" ? "#DC2626"
-                          : "#6B7280",
+                          r._itemStatus === "ISSUED_CONFIRMED"
+                            ? "#16A34A"
+                            : r._itemStatus === "ISSUED_PENDING_REQUESTER_ACCEPT"
+                            ? "#FBBF24"
+                            : r._itemStatus === "RETURNED"
+                            ? "#2563EB"
+                            : r._itemStatus === "RETURNREQUESTED"
+                            ? "#F97316"
+                            : r._itemStatus === "REJECTED_BY_LECTURER"
+                            ? "#DC2626"
+                            : "#6B7280",
                         color: r._itemStatus === "ISSUED_PENDING_REQUESTER_ACCEPT" ? "#111" : "white",
+                        padding: "4px 8px",
+                        borderRadius: "6px",
+                        fontWeight: 600,
+                        fontSize: 13,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
                       }}
                     >
                       {r._itemStatus || "-"}
                     </span>
-                  </div>
-                </div>
-              </div>
-              {renderAction(r) && (
-                <div className="history-actions">
-                  {renderAction(r)}
-                </div>
+                  </td>
+                  <td style={{ textAlign: "center" }}>{renderAction(r)}</td>
+                </tr>
+              ))}
+
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan="8" style={{ textAlign: "center" }}>
+                    {loading ? "Loading..." : "No requests"}
+                  </td>
+                </tr>
               )}
-            </div>
-          ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
