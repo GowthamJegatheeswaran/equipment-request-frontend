@@ -199,7 +199,7 @@ export default function AdminViewRequests() {
                       return (
                         <tr key={p.id}>
                           <td className="a-id">#{p.id}</td>
-                          <td>{p.requestedByName || p.toName || "–"}</td>
+                          <td>{p.requestedByName || "–"}</td>
                           <td>{items[0]?.equipmentName || "–"}</td>
                           <td className="tc">{items.length}</td>
                           <td className="tc muted">{p.createdDate || "–"}</td>
@@ -248,11 +248,11 @@ function PurchaseCard({ p, issuedDate, onApprove, onReject, isActioning, showAct
         <div className="a-meta-grid">
           <div>
             <div className="a-mi-label">Submitted By (TO)</div>
-            <div className="a-mi-value">{p.requestedByName || p.toName || "–"}</div>
+            <div className="a-mi-value">{p.requestedByName || "–"}</div>
           </div>
           <div>
-            <div className="a-mi-label">HOD</div>
-            <div className="a-mi-value">{p.hodName || "–"}</div>
+            <div className="a-mi-label">HOD (Approved)</div>
+            <div className="a-mi-value">{p.hodName || p.requestedByName || "–"}</div>
           </div>
           <div>
             <div className="a-mi-label">Submitted Date</div>
