@@ -121,11 +121,8 @@ export default function StudentDashboard() {
           <h3>Quick Actions</h3>
           
 
-<div className="actions">
-  <button
-    className="btn-new-request"
-    onClick={() => navigate("/new-request")}// open modal
-  >
+<div className="dashboard-quick-actions">
+  <button onClick={() => navigate("/new-request")}>
     <AiOutlinePlus size={18} /> New Request
   </button>
 </div>
