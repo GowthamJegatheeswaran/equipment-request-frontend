@@ -1,164 +1,144 @@
-import "../styles/dashboard.css"
 import "../styles/toTheme.css"
 import Sidebar from "../components/Sidebar"
 import Topbar from "../components/Topbar"
 import { useEffect, useMemo, useState } from "react"
 import { ToRequestAPI } from "../api/api"
-import { AiOutlineCheck, AiOutlineClockCircle, AiOutlineWarning } from "react-icons/ai"
-import { FaSearch } from "react-icons/fa"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 
-/* ── Status helpers ── */
-function itemStatusPill(s) {
-  s = String(s || "").toUpperCase()
-  if (s === "PENDING_LECTURER_APPROVAL")       return { label: "Pending Approval",  cls: "to-sp-pending-lec" }
-  if (s === "APPROVED_BY_LECTURER")            return { label: "Ready to Issue",    cls: "to-sp-approved" }
-  if (s === "REJECTED_BY_LECTURER")            return { label: "Rejected",          cls: "to-sp-rejected" }
-  if (s === "WAITING_TO_ISSUE")                return { label: "Waiting",           cls: "to-sp-waiting" }
-  if (s === "ISSUED_PENDING_REQUESTER_ACCEPT") return { label: "Issued – Confirm",  cls: "to-sp-issued-pend" }
-  if (s === "ISSUED_CONFIRMED")                return { label: "Issued ✓",          cls: "to-sp-issued" }
-  if (s === "RETURN_REQUESTED")                return { label: "Return Requested",  cls: "to-sp-return-req" }
-  if (s === "RETURN_VERIFIED")                 return { label: "Returned",          cls: "to-sp-returned" }
-  if (s === "DAMAGED_REPORTED")                return { label: "Damaged",           cls: "to-sp-damaged" }
-  return { label: s.replace(/_/g, " "), cls: "to-sp-slate" }
-}
-
-/*
- * Logic rules from backend RequestItemStatus:
- *   canIssue  → APPROVED_BY_LECTURER  or  WAITING_TO_ISSUE
- *   canWait   → APPROVED_BY_LECTURER  only  (if already waiting, issue or re-wait from waiting)
- *   canVerify → RETURN_REQUESTED  only
- */
-function getActions(status) {
-  const s = String(status || "").toUpperCase()
-  return {
-    canIssue:  s === "APPROVED_BY_LECTURER" || s === "WAITING_TO_ISSUE",
-    canWait:   s === "APPROVED_BY_LECTURER",
-    canVerify: s === "RETURN_REQUESTED",
+/* ── Status pill helper ── */
+function itemSpClass(s) {
+  if (!s) return "to-sp to-sp-slate"
+  switch (s) {
+    case "PENDING_LECTURER_APPROVAL":       return "to-sp to-sp-pending"
+    case "APPROVED_BY_LECTURER":            return "to-sp to-sp-approved"
+    case "REJECTED_BY_LECTURER":            return "to-sp to-sp-rejected"
+    case "WAITING_TO_ISSUE":                return "to-sp to-sp-waiting"
+    case "ISSUED_PENDING_REQUESTER_ACCEPT": return "to-sp to-sp-issued"
+    case "ISSUED_CONFIRMED":                return "to-sp to-sp-confirmed"
+    case "RETURN_REQUESTED":                return "to-sp to-sp-return-req"
+    case "RETURN_VERIFIED":                 return "to-sp to-sp-returned"
+    case "DAMAGED_REPORTED":                return "to-sp to-sp-damaged"
+    default:                                return "to-sp to-sp-slate"
   }
 }
 
-const FILTER_OPTIONS = [
-  { value: "ALL",                             label: "All" },
+function itemStatusLabel(s) {
+  if (!s) return "—"
+  return s.replace(/_/g, " ")
+}
+
+/* ── Per-item action state ── */
+function useItemActions(reload) {
+  const [busy, setBusy] = useState({})      // itemId → true while processing
+  const [waitOpen, setWaitOpen] = useState({}) // itemId → true when wait panel open
+  const [waitReason, setWaitReason] = useState({}) // itemId → string
+  const [itemError, setItemError] = useState({}) // itemId → error string
+
+  const act = async (itemId, fn) => {
+    setBusy(p => ({ ...p, [itemId]: true }))
+    setItemError(p => ({ ...p, [itemId]: "" }))
+    try {
+      await fn()
+      await reload()
+    } catch (e) {
+      setItemError(p => ({ ...p, [itemId]: e?.message || "Action failed" }))
+    } finally {
+      setBusy(p => ({ ...p, [itemId]: false }))
+    }
+  }
+
+  const issue = (itemId) => act(itemId, () => ToRequestAPI.issueItem(itemId))
+
+  const openWait = (itemId) => setWaitOpen(p => ({ ...p, [itemId]: true }))
+  const closeWait = (itemId) => {
+    setWaitOpen(p => ({ ...p, [itemId]: false }))
+    setWaitReason(p => ({ ...p, [itemId]: "" }))
+  }
+  const submitWait = (itemId) => {
+    const reason = (waitReason[itemId] || "").trim()
+    act(itemId, () => ToRequestAPI.waitItem(itemId, reason))
+    closeWait(itemId)
+  }
+
+  const verifyOk     = (itemId) => act(itemId, () => ToRequestAPI.verifyReturnItem(itemId, false))
+  const verifyDamage = (itemId) => act(itemId, () => ToRequestAPI.verifyReturnItem(itemId, true))
+
+  return { busy, waitOpen, waitReason, setWaitReason, itemError, issue, openWait, closeWait, submitWait, verifyOk, verifyDamage }
+}
+
+/* ── Which items the TO can act on ── */
+// Issue is available when item is APPROVED_BY_LECTURER OR WAITING_TO_ISSUE (re-issue attempt)
+const canIssue = (s) => s === "APPROVED_BY_LECTURER" || s === "WAITING_TO_ISSUE"
+const canWait  = (s) => s === "APPROVED_BY_LECTURER"
+const canVerifyReturn = (s) => s === "RETURN_REQUESTED"
+
+/* ── Filter options ── */
+const STATUS_FILTERS = [
+  { value: "all",          label: "All Statuses" },
   { value: "APPROVED_BY_LECTURER",            label: "Ready to Issue" },
   { value: "WAITING_TO_ISSUE",                label: "Waiting" },
+  { value: "ISSUED_PENDING_REQUESTER_ACCEPT", label: "Issued (Pending Accept)" },
+  { value: "ISSUED_CONFIRMED",                label: "Confirmed" },
   { value: "RETURN_REQUESTED",                label: "Return Requested" },
-  { value: "ISSUED_PENDING_REQUESTER_ACCEPT", label: "Issued – Pending" },
-  { value: "ISSUED_CONFIRMED",                label: "Issued ✓" },
 ]
 
 export default function TOApprovalRequests() {
-  const [sidebarOpen,  setSidebarOpen]  = useState(false)
-  const [rows,         setRows]         = useState([])
-  const [loading,      setLoading]      = useState(true)
-  const [error,        setError]        = useState("")
-  const [notice,       setNotice]       = useState("")
-  const [search,       setSearch]       = useState("")
-  const [filter,       setFilter]       = useState("ALL")
-  const [actioning,    setActioning]    = useState(null)
-  /* Per-item inline wait panels: { [requestItemId]: { open, reason } } */
-  const [waitPanels,   setWaitPanels]   = useState({})
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [rows, setRows] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
+  const [search, setSearch] = useState("")
+  const [statusFilter, setStatusFilter] = useState("all")
 
   const load = async () => {
     setError("")
     try {
+      setLoading(true)
       const list = await ToRequestAPI.all()
       setRows(Array.isArray(list) ? list : [])
-    } catch (e) { setError(e?.message || "Failed to load") }
-    finally { setLoading(false) }
+    } catch (e) {
+      setError(e?.message || "Failed to load requests")
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => { load() }, [])
 
-  const flash = (msg, type = "success") => {
-    if (type === "success") { setNotice(msg); setTimeout(() => setNotice(""), 5000) }
-    else                    { setError(msg);  setTimeout(() => setError(""), 6000) }
-  }
+  const actions = useItemActions(load)
 
-  /* ── Flatten rows × items ── */
-  const flatItems = useMemo(() => {
+  /* Flatten to item rows — show only actionable or in-progress items */
+  const SHOW_STATUSES = new Set([
+    "APPROVED_BY_LECTURER",
+    "WAITING_TO_ISSUE",
+    "ISSUED_PENDING_REQUESTER_ACCEPT",
+    "ISSUED_CONFIRMED",
+    "RETURN_REQUESTED",
+  ])
+
+  const flatRows = useMemo(() => {
     const out = []
     for (const r of rows) {
-      for (const it of (Array.isArray(r.items) ? r.items : [])) {
+      for (const it of (r.items || [])) {
+        if (!SHOW_STATUSES.has(it.itemStatus)) continue
         out.push({ ...r, _item: it })
       }
     }
     return out.sort((a, b) => (b.requestId || 0) - (a.requestId || 0))
   }, [rows])
 
-  /* Stats for header cards */
-  const stats = useMemo(() => ({
-    ready:   flatItems.filter(r => r._item.itemStatus === "APPROVED_BY_LECTURER").length,
-    waiting: flatItems.filter(r => r._item.itemStatus === "WAITING_TO_ISSUE").length,
-    returns: flatItems.filter(r => r._item.itemStatus === "RETURN_REQUESTED").length,
-  }), [flatItems])
-
-  /* Bar: equipment pending issue */
-  const pendingBar = useMemo(() => {
-    const map = {}
-    for (const r of flatItems) {
-      if (!["APPROVED_BY_LECTURER", "WAITING_TO_ISSUE"].includes(r._item.itemStatus)) continue
-      const n = r._item.equipmentName || `Equip#${r._item.equipmentId}`
-      map[n] = (map[n] || 0) + (r._item.quantity || 1)
-    }
-    return Object.entries(map)
-      .sort(([, a], [, b]) => b - a).slice(0, 6)
-      .map(([name, qty]) => ({ name: name.length > 18 ? name.slice(0, 18) + "…" : name, qty }))
-  }, [flatItems])
-
-  /* Apply filters */
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase()
-    return flatItems
-      .filter(r => filter === "ALL" || r._item.itemStatus === filter)
-      .filter(r => {
-        if (!q) return true
-        return (
-          String(r.requesterFullName || "").toLowerCase().includes(q) ||
-          String(r.requesterRegNo   || "").toLowerCase().includes(q) ||
-          String(r._item?.equipmentName || "").toLowerCase().includes(q) ||
-          String(r.labName || "").toLowerCase().includes(q) ||
-          String(r.requestId || "").includes(q)
-        )
-      })
-  }, [flatItems, filter, search])
-
-  /* ── Action handlers ── */
-  const actIssue = async (requestItemId) => {
-    setActioning(requestItemId)
-    try {
-      await ToRequestAPI.issueItem(requestItemId)
-      flash("Item issued successfully")
-      await load()
-    } catch (e) { flash(e?.message || "Issue failed", "error") }
-    finally { setActioning(null) }
-  }
-
-  const openWait  = (id) => setWaitPanels(p => ({ ...p, [id]: { open: true, reason: "" } }))
-  const closeWait = (id) => setWaitPanels(p => { const c = { ...p }; delete c[id]; return c })
-  const setReason = (id, val) => setWaitPanels(p => ({ ...p, [id]: { ...p[id], reason: val } }))
-
-  const actWait = async (requestItemId) => {
-    const reason = waitPanels[requestItemId]?.reason?.trim() || ""
-    setActioning(requestItemId)
-    try {
-      await ToRequestAPI.waitItem(requestItemId, reason)
-      flash("Item marked as waiting")
-      closeWait(requestItemId)
-      await load()
-    } catch (e) { flash(e?.message || "Failed", "error") }
-    finally { setActioning(null) }
-  }
-
-  const actVerify = async (requestItemId, damaged) => {
-    setActioning(requestItemId)
-    try {
-      await ToRequestAPI.verifyReturnItem(requestItemId, damaged)
-      flash(damaged ? "Item marked as damaged" : "Return verified")
-      await load()
-    } catch (e) { flash(e?.message || "Failed", "error") }
-    finally { setActioning(null) }
-  }
+    const q = search.toLowerCase()
+    return flatRows.filter(r => {
+      const matchSearch = !q ||
+        String(r.requestId).includes(q) ||
+        (r.requesterFullName || "").toLowerCase().includes(q) ||
+        (r.requesterRegNo || "").toLowerCase().includes(q) ||
+        (r.labName || "").toLowerCase().includes(q) ||
+        (r._item.equipmentName || "").toLowerCase().includes(q)
+      const matchStatus = statusFilter === "all" || r._item.itemStatus === statusFilter
+      return matchSearch && matchStatus
+    })
+  }, [flatRows, search, statusFilter])
 
   return (
     <div className="dashboard-container">
@@ -169,198 +149,182 @@ export default function TOApprovalRequests() {
 
           <div className="to-page-header">
             <div>
-              <div className="to-page-title">Approval Queue</div>
-              <div className="to-page-subtitle">Issue equipment, mark items as waiting, and verify returns</div>
+              <div className="to-page-title">Approval Requests</div>
+              <div className="to-page-subtitle">Issue equipment, mark as waiting, or verify returns</div>
+            </div>
+            <div style={{ fontSize: 13, color: "var(--to-text-muted)", fontWeight: 600 }}>
+              {filtered.length} item{filtered.length !== 1 ? "s" : ""}
             </div>
           </div>
 
-          {error  && <div className="to-alert to-alert-error">{error}</div>}
-          {notice && <div className="to-alert to-alert-success">{notice}</div>}
+          {error && <div className="to-alert to-alert-error">{error}</div>}
 
-          {/* Stats */}
-          <div className="to-stat-grid">
-            <div className="to-stat-card amber">
-              <div className="to-stat-label">Ready to Issue</div>
-              <div className="to-stat-value">{stats.ready}</div>
-              <div className="to-stat-sub">Approved by lecturer</div>
-            </div>
-            <div className="to-stat-card purple">
-              <div className="to-stat-label">Waiting</div>
-              <div className="to-stat-value">{stats.waiting}</div>
-              <div className="to-stat-sub">Stock unavailable</div>
-            </div>
-            <div className="to-stat-card orange">
-              <div className="to-stat-label">Pending Return Verify</div>
-              <div className="to-stat-value">{stats.returns}</div>
-            </div>
-          </div>
-
-          {/* Pending issue bar */}
-          {pendingBar.length > 0 && (
-            <div className="to-chart-card" style={{ marginBottom: 20 }}>
-              <div className="to-chart-title">Equipment Pending Issue</div>
-              <ResponsiveContainer width="100%" height={Math.max(120, pendingBar.length * 36)}>
-                <BarChart data={pendingBar} layout="vertical"
-                  margin={{ top: 4, right: 20, bottom: 4, left: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
-                  <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} />
-                  <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} width={140} />
-                  <Tooltip />
-                  <Bar dataKey="qty" fill="#d97706" radius={[0, 4, 4, 0]} name="Total Qty" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-
-          {/* Filter bar */}
+          {/* Filters */}
           <div className="to-filter-bar">
             <div className="to-filter-wrap">
-              <FaSearch size={12} />
-              <input className="to-filter-input"
-                placeholder="Search requester, reg no, equipment, lab, ID…"
-                value={search} onChange={e => setSearch(e.target.value)} />
+              <span className="to-filter-icon">🔍</span>
+              <input
+                className="to-filter-input"
+                placeholder="Search by ID, requester, lab, equipment…"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
             </div>
-            <select className="to-filter-select" value={filter} onChange={e => setFilter(e.target.value)}>
-              {FILTER_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            <select
+              className="to-filter-select"
+              value={statusFilter}
+              onChange={e => setStatusFilter(e.target.value)}
+            >
+              {STATUS_FILTERS.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
             </select>
           </div>
 
-          {loading && <div className="to-empty"><div className="to-empty-icon">⏳</div><div className="to-empty-text">Loading…</div></div>}
-          {!loading && filtered.length === 0 && (
+          {loading && (
             <div className="to-empty">
-              <div className="to-empty-icon">✅</div>
-              <div className="to-empty-text">
-                {search || filter !== "ALL" ? "No items match your filter" : "No items requiring action"}
-              </div>
+              <div className="to-empty-icon">⏳</div>
+              <div className="to-empty-text">Loading requests…</div>
             </div>
           )}
 
-          {!loading && filtered.map(r => {
-            const it  = r._item
-            const iid = it.requestItemId
-            const { label, cls } = itemStatusPill(it.itemStatus)
-            const { canIssue, canWait, canVerify } = getActions(it.itemStatus)
-            const busy      = actioning === iid
-            const waitPanel = waitPanels[iid]
+          {!loading && filtered.length === 0 && (
+            <div className="to-empty">
+              <div className="to-empty-icon">📭</div>
+              <div className="to-empty-text">No requests match the current filters</div>
+            </div>
+          )}
+
+          {!loading && filtered.map((r) => {
+            const it = r._item
+            const itemId = it.requestItemId
+            const showWait = actions.waitOpen[itemId]
+            const isBusy = actions.busy[itemId]
+            const err = actions.itemError[itemId]
 
             return (
-              <div key={`${r.requestId}-${iid}`} className="to-card">
+              <div key={`${r.requestId}-${itemId}`} className="to-card">
+                {/* Card Header */}
                 <div className="to-card-top">
-                  <div className="to-card-title">
-                    <span className="to-id">#{r.requestId}</span>
-                    <span className={`to-sp ${cls}`}>{label}</span>
-                    {r.purpose && (
-                      <span className={`to-purpose ${String(r.purpose).toLowerCase()}`}>
-                        {r.purpose}
-                      </span>
+                  <div>
+                    <div className="to-card-title">
+                      <span style={{ color: "var(--to-blue)", fontWeight: 800 }}>#{r.requestId}</span>
+                      <span style={{ fontWeight: 400, fontSize: 13, color: "var(--to-text-muted)" }}>·</span>
+                      <span>{it.equipmentName || `Equipment #${it.equipmentId}`}</span>
+                    </div>
+                    <div style={{ marginTop: 3, fontSize: 12, color: "var(--to-text-muted)" }}>
+                      {r.requesterFullName || r.requesterRegNo || "Unknown"} · {r.requesterRole || "—"}
+                    </div>
+                  </div>
+                  <span className={itemSpClass(it.itemStatus)}>
+                    {itemStatusLabel(it.itemStatus)}
+                  </span>
+                </div>
+
+                {/* Card Body */}
+                <div className="to-card-body">
+                  <div className="to-meta-grid">
+                    <div>
+                      <div className="to-mi-label">Requester</div>
+                      <div className="to-mi-value">{r.requesterFullName || "—"}</div>
+                    </div>
+                    <div>
+                      <div className="to-mi-label">Reg / ID</div>
+                      <div className="to-mi-value">{r.requesterRegNo || "—"}</div>
+                    </div>
+                    <div>
+                      <div className="to-mi-label">Lab</div>
+                      <div className="to-mi-value">{r.labName || "—"}</div>
+                    </div>
+                    <div>
+                      <div className="to-mi-label">From → To</div>
+                      <div className="to-mi-value">{r.fromDate || "—"} → {r.toDate || "—"}</div>
+                    </div>
+                    <div>
+                      <div className="to-mi-label">Qty</div>
+                      <div className="to-mi-value">{it.quantity ?? "—"}</div>
+                    </div>
+                    <div>
+                      <div className="to-mi-label">Item Type</div>
+                      <div className="to-mi-value">{it.itemType || "—"}</div>
+                    </div>
+                    {it.issuedQty != null && (
+                      <div>
+                        <div className="to-mi-label">Issued Qty</div>
+                        <div className="to-mi-value">{it.issuedQty}</div>
+                      </div>
                     )}
-                    {r.requesterRole && (
-                      <span className="to-sp to-sp-slate">{r.requesterRole}</span>
+                    {it.toWaitReason && (
+                      <div style={{ gridColumn: "1/-1" }}>
+                        <div className="to-mi-label">Wait Reason</div>
+                        <div className="to-mi-value" style={{ color: "var(--to-purple)" }}>{it.toWaitReason}</div>
+                      </div>
                     )}
                   </div>
+
+                  {err && <div className="to-alert to-alert-error" style={{ marginBottom: 10 }}>{err}</div>}
+
+                  {/* Action Buttons */}
                   <div className="to-card-actions">
-                    {canIssue && (
-                      <button className="to-btn to-btn-success to-btn-sm"
-                        disabled={busy || !!waitPanel?.open}
-                        onClick={() => actIssue(iid)}>
-                        <AiOutlineCheck /> Issue
+                    {canIssue(it.itemStatus) && (
+                      <button
+                        className="to-btn to-btn-success to-btn-sm"
+                        onClick={() => actions.issue(itemId)}
+                        disabled={isBusy}
+                      >
+                        ✓ Issue
                       </button>
                     )}
-                    {canWait && (
-                      <button className="to-btn to-btn-amber to-btn-sm"
-                        disabled={busy}
-                        onClick={() => waitPanel?.open ? closeWait(iid) : openWait(iid)}>
-                        <AiOutlineClockCircle /> {waitPanel?.open ? "Cancel" : "Mark Wait"}
+                    {canWait(it.itemStatus) && !showWait && (
+                      <button
+                        className="to-btn to-btn-amber to-btn-sm"
+                        onClick={() => actions.openWait(itemId)}
+                        disabled={isBusy}
+                      >
+                        ⏸ Mark as Waiting
                       </button>
                     )}
-                    {canVerify && (
+                    {canVerifyReturn(it.itemStatus) && (
                       <>
-                        <button className="to-btn to-btn-success to-btn-sm"
-                          disabled={busy}
-                          onClick={() => actVerify(iid, false)}>
-                          <AiOutlineCheck /> Verify Return
+                        <button
+                          className="to-btn to-btn-success to-btn-sm"
+                          onClick={() => actions.verifyOk(itemId)}
+                          disabled={isBusy}
+                        >
+                          ✓ Verify Return (OK)
                         </button>
-                        <button className="to-btn to-btn-danger to-btn-sm"
-                          disabled={busy}
-                          onClick={() => actVerify(iid, true)}>
-                          <AiOutlineWarning /> Mark Damaged
+                        <button
+                          className="to-btn to-btn-danger to-btn-sm"
+                          onClick={() => actions.verifyDamage(itemId)}
+                          disabled={isBusy}
+                        >
+                          ⚠ Mark Damaged
                         </button>
                       </>
                     )}
                   </div>
-                </div>
 
-                <div className="to-card-body">
-                  {/* Meta info */}
-                  <div className="to-meta-grid">
-                    <div>
-                      <div className="to-mi-label">Requester</div>
-                      <div className="to-mi-value">{r.requesterFullName || "–"}</div>
-                    </div>
-                    <div>
-                      <div className="to-mi-label">Reg No</div>
-                      <div className="to-mi-value muted">{r.requesterRegNo || "–"}</div>
-                    </div>
-                    <div>
-                      <div className="to-mi-label">Lab</div>
-                      <div className="to-mi-value">{r.labName || "–"}</div>
-                    </div>
-                    <div>
-                      <div className="to-mi-label">Lecturer</div>
-                      <div className="to-mi-value muted">{r.lecturerFullName || "–"}</div>
-                    </div>
-                    <div>
-                      <div className="to-mi-label">From</div>
-                      <div className="to-mi-value">{r.fromDate || "–"}</div>
-                    </div>
-                    <div>
-                      <div className="to-mi-label">To</div>
-                      <div className="to-mi-value">{r.toDate || "–"}</div>
-                    </div>
-                  </div>
-
-                  {/* Equipment item row */}
-                  <div className="to-equip-row">
-                    <div style={{ flex: 1 }}>
-                      <div className="to-equip-name">
-                        {it.equipmentName || `Equipment #${it.equipmentId}`}
-                      </div>
-                      <div className="to-equip-meta">
-                        <span>Requested: <strong>{it.quantity}</strong></span>
-                        {it.issuedQty != null && it.issuedQty > 0 && (
-                          <span>Issued: <strong>{it.issuedQty}</strong></span>
-                        )}
-                        {it.itemType && (
-                          <span className={`to-type-chip ${String(it.itemType).toLowerCase()}`}>
-                            {it.itemType}
-                          </span>
-                        )}
-                        {it.category && <span className="to-muted">{it.category}</span>}
-                      </div>
-                      {it.toWaitReason && (
-                        <div className="to-wait-reason">⚠ Wait reason: {it.toWaitReason}</div>
-                      )}
-                    </div>
-                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                      {it.returned && <span className="to-sp to-sp-returned">Returned</span>}
-                      {it.damaged  && <span className="to-sp to-sp-damaged">Damaged</span>}
-                    </div>
-                  </div>
-
-                  {/* Inline wait reason panel */}
-                  {waitPanel?.open && (
+                  {/* Inline Wait Reason Panel — no window.prompt */}
+                  {showWait && (
                     <div className="to-wait-panel">
-                      <input className="to-wait-input"
-                        placeholder="Reason for waiting (optional — e.g. out of stock)"
-                        value={waitPanel.reason}
-                        onChange={e => setReason(iid, e.target.value)} />
-                      <button className="to-btn to-btn-amber to-btn-sm"
-                        disabled={busy}
-                        onClick={() => actWait(iid)}>
-                        {busy ? "…" : "Confirm Wait"}
+                      <input
+                        className="to-wait-input"
+                        placeholder="Reason for waiting (optional)…"
+                        value={actions.waitReason[itemId] || ""}
+                        onChange={e => actions.setWaitReason(p => ({ ...p, [itemId]: e.target.value }))}
+                        autoFocus
+                      />
+                      <button
+                        className="to-btn to-btn-amber to-btn-sm"
+                        onClick={() => actions.submitWait(itemId)}
+                        disabled={isBusy}
+                      >
+                        Confirm Wait
                       </button>
-                      <button className="to-btn to-btn-ghost to-btn-sm"
-                        onClick={() => closeWait(iid)}>
+                      <button
+                        className="to-btn to-btn-ghost to-btn-sm"
+                        onClick={() => actions.closeWait(itemId)}
+                      >
                         Cancel
                       </button>
                     </div>

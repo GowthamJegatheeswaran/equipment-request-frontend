@@ -1,134 +1,259 @@
-import "../styles/dashboard.css"
 import "../styles/toTheme.css"
 import Sidebar from "../components/Sidebar"
 import Topbar from "../components/Topbar"
 import { useEffect, useMemo, useState } from "react"
 import { ToPurchaseAPI, ToRequestAPI } from "../api/api"
-import { FaSearch } from "react-icons/fa"
 import {
-  PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid
+  PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid,
 } from "recharts"
 
-const PIE_COLORS = ["#64748b", "#dc2626", "#16a34a", "#d97706", "#2563eb"]
-
-/* ── Purchase status → pill ── */
-function purchaseStatusPill(s) {
-  s = String(s || "").toUpperCase()
-  if (s === "SUBMITTED_TO_HOD")  return { label: "Submitted to HOD", cls: "to-sp-submitted" }
-  if (s === "REJECTED_BY_HOD")   return { label: "Rejected by HOD",  cls: "to-sp-hod-rejected" }
-  if (s === "APPROVED_BY_HOD")   return { label: "Approved by HOD",  cls: "to-sp-hod-approved" }
-  if (s === "REJECTED_BY_ADMIN") return { label: "Rejected by Admin",cls: "to-sp-adm-rejected" }
-  if (s === "ISSUED_BY_ADMIN")   return { label: "Issued by Admin",  cls: "to-sp-issued-admin" }
-  if (s === "APPROVED_BY_ADMIN") return { label: "Approved by Admin",cls: "to-sp-issued-admin" }
-  if (s === "RECEIVED_BY_HOD")   return { label: "Received",         cls: "to-sp-received" }
-  if (s === "RECEIVED_BY_TO")    return { label: "Received",         cls: "to-sp-received" }
-  return { label: s.replace(/_/g, " "), cls: "to-sp-slate" }
+/* ── Purchase status helpers ── */
+function purchaseSpClass(s) {
+  if (!s) return "to-sp to-sp-slate"
+  switch (s) {
+    case "SUBMITTED_TO_HOD":  return "to-sp to-sp-submitted"
+    case "APPROVED_BY_HOD":   return "to-sp to-sp-hod-approved"
+    case "REJECTED_BY_HOD":   return "to-sp to-sp-hod-rejected"
+    case "ISSUED_BY_ADMIN":   return "to-sp to-sp-admin-issued"
+    case "REJECTED_BY_ADMIN": return "to-sp to-sp-rejected"
+    case "RECEIVED_BY_HOD":   return "to-sp to-sp-received"
+    default:                  return "to-sp to-sp-slate"
+  }
+}
+function purchaseStatusLabel(s) {
+  if (!s) return "—"
+  switch (s) {
+    case "SUBMITTED_TO_HOD":  return "Submitted to HOD"
+    case "APPROVED_BY_HOD":   return "HOD Approved"
+    case "REJECTED_BY_HOD":   return "HOD Rejected"
+    case "ISSUED_BY_ADMIN":   return "Issued by Admin"
+    case "REJECTED_BY_ADMIN": return "Admin Rejected"
+    case "RECEIVED_BY_HOD":   return "Received"
+    default:                  return s.replace(/_/g, " ")
+  }
 }
 
-/* ── Item status → pill (for completed items in history) ── */
-function itemStatusPill(s) {
-  s = String(s || "").toUpperCase()
-  if (s === "RETURN_VERIFIED") return { label: "Returned",  cls: "to-sp-returned" }
-  if (s === "DAMAGED_REPORTED")return { label: "Damaged",   cls: "to-sp-damaged" }
-  return { label: s.replace(/_/g, " "), cls: "to-sp-slate" }
+/* ── Request item status helpers ── */
+function itemSpClass(s) {
+  if (!s) return "to-sp to-sp-slate"
+  switch (s) {
+    case "RETURN_VERIFIED":   return "to-sp to-sp-returned"
+    case "DAMAGED_REPORTED":  return "to-sp to-sp-damaged"
+    case "REJECTED_BY_LECTURER": return "to-sp to-sp-rejected"
+    default:                  return "to-sp to-sp-slate"
+  }
 }
+function itemStatusLabel(s) {
+  if (!s) return "—"
+  switch (s) {
+    case "RETURN_VERIFIED":   return "Returned & Verified"
+    case "DAMAGED_REPORTED":  return "Damaged"
+    case "REJECTED_BY_LECTURER": return "Rejected by Lecturer"
+    default:                  return s.replace(/_/g, " ")
+  }
+}
+
+/* History item statuses to show */
+const HISTORY_ITEM_STATUSES = new Set(["RETURN_VERIFIED", "DAMAGED_REPORTED"])
+
+const PIE_COLORS_P = ["#2563eb", "#16a34a", "#dc2626", "#0891b2", "#7c3aed", "#d97706"]
+const PIE_COLORS_R = ["#16a34a", "#dc2626"]
 
 const TABS = [
-  { key: "returns",   label: "Equipment Returns" },
-  { key: "purchases", label: "Purchase History" },
+  { id: "purchases",   label: "My Purchases" },
+  { id: "students",    label: "Student / Instructor History" },
+  { id: "lecturers",   label: "Lecturer History" },
 ]
 
 export default function TOHistory() {
-  const [sidebarOpen,  setSidebarOpen]  = useState(false)
-  const [tab,          setTab]          = useState("returns")
-  const [requestRows,  setRequestRows]  = useState([])
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [tab, setTab] = useState("purchases")
   const [purchaseRows, setPurchaseRows] = useState([])
-  const [loading,      setLoading]      = useState(true)
-  const [error,        setError]        = useState("")
-  const [search,       setSearch]       = useState("")
+  const [requestRows, setRequestRows]   = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError]     = useState("")
 
   useEffect(() => {
-    Promise.all([
-      ToRequestAPI.all().catch(() => []),
-      ToPurchaseAPI.my().catch(() => []),
-    ]).then(([reqs, purch]) => {
-      setRequestRows(Array.isArray(reqs)  ? reqs  : [])
-      setPurchaseRows(Array.isArray(purch) ? purch : [])
-    }).catch(e => setError(e?.message || "Failed to load"))
-    .finally(() => setLoading(false))
+    const load = async () => {
+      setError("")
+      try {
+        setLoading(true)
+        const [pList, rList] = await Promise.all([
+          ToPurchaseAPI.my(),
+          ToRequestAPI.all(),
+        ])
+        setPurchaseRows(Array.isArray(pList) ? pList : [])
+        setRequestRows(Array.isArray(rList) ? rList : [])
+      } catch (e) {
+        setError(e?.message || "Failed to load history")
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
   }, [])
 
-  /* ── Completed equipment items (RETURN_VERIFIED or DAMAGED_REPORTED) ── */
-  const completedItems = useMemo(() => {
-    const valid = new Set(["RETURN_VERIFIED", "DAMAGED_REPORTED"])
+  /* ── Flattened history items ── */
+  const historyFlat = useMemo(() => {
     const out = []
     for (const r of requestRows) {
-      for (const it of (Array.isArray(r.items) ? r.items : [])) {
-        if (valid.has(it.itemStatus)) out.push({ ...r, _item: it })
+      for (const it of (r.items || [])) {
+        if (!HISTORY_ITEM_STATUSES.has(it.itemStatus)) continue
+        out.push({ ...r, _item: it })
       }
     }
     return out.sort((a, b) => (b.requestId || 0) - (a.requestId || 0))
   }, [requestRows])
 
-  /* ── Sorted purchases ── */
-  const sortedPurchases = useMemo(() =>
-    [...purchaseRows].sort((a, b) => (b.id || 0) - (a.id || 0))
-  , [purchaseRows])
+  const studentHistory = useMemo(() =>
+    historyFlat.filter(r => ["STUDENT", "INSTRUCTOR", "STAFF"].includes((r.requesterRole || "").toUpperCase())),
+  [historyFlat])
 
-  /* ── Charts for returns tab ── */
-  const returnsPie = useMemo(() => {
+  const lecturerHistory = useMemo(() =>
+    historyFlat.filter(r => (r.requesterRole || "").toUpperCase() === "LECTURER"),
+  [historyFlat])
+
+  /* ── Pie: purchase status breakdown ── */
+  const purchasePieData = useMemo(() => {
     const map = {}
-    for (const r of completedItems) {
-      const { label } = itemStatusPill(r._item.itemStatus)
+    for (const p of purchaseRows) {
+      const label = purchaseStatusLabel(p.status)
       map[label] = (map[label] || 0) + 1
     }
     return Object.entries(map).map(([name, value]) => ({ name, value }))
-  }, [completedItems])
+  }, [purchaseRows])
 
-  const roleBar = useMemo(() => {
+  /* ── Pie: return outcome breakdown ── */
+  const returnPieData = useMemo(() => {
     const map = {}
-    for (const r of completedItems) {
-      const role = r.requesterRole || "Unknown"
-      map[role] = (map[role] || 0) + 1
-    }
-    return Object.entries(map).map(([name, count]) => ({ name, count }))
-  }, [completedItems])
-
-  /* ── Charts for purchases tab ── */
-  const purchasePie = useMemo(() => {
-    const map = {}
-    for (const p of sortedPurchases) {
-      const { label } = purchaseStatusPill(p.status)
+    for (const { _item } of historyFlat) {
+      const label = itemStatusLabel(_item.itemStatus)
       map[label] = (map[label] || 0) + 1
     }
     return Object.entries(map).map(([name, value]) => ({ name, value }))
-  }, [sortedPurchases])
+  }, [historyFlat])
 
-  /* ── Filter ── */
-  const filteredReturns = useMemo(() => {
-    const q = search.trim().toLowerCase()
-    if (!q) return completedItems
-    return completedItems.filter(r =>
-      String(r.requesterFullName || "").toLowerCase().includes(q) ||
-      String(r.requesterRegNo   || "").toLowerCase().includes(q) ||
-      String(r._item?.equipmentName || "").toLowerCase().includes(q) ||
-      String(r.labName || "").toLowerCase().includes(q) ||
-      String(r.requestId || "").includes(q)
-    )
-  }, [completedItems, search])
+  /* ── Bar: top equipment returned ── */
+  const equipBarData = useMemo(() => {
+    const map = {}
+    for (const { _item } of historyFlat) {
+      const name = _item.equipmentName || "Unknown"
+      map[name] = (map[name] || 0) + 1
+    }
+    return Object.entries(map)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 8)
+      .map(([name, count]) => ({
+        name: name.length > 13 ? name.slice(0, 13) + "…" : name,
+        count,
+      }))
+  }, [historyFlat])
 
-  const filteredPurchases = useMemo(() => {
-    const q = search.trim().toLowerCase()
-    if (!q) return sortedPurchases
-    return sortedPurchases.filter(p =>
-      String(p.id || "").includes(q) ||
-      String(p.status || "").toLowerCase().includes(q) ||
-      (Array.isArray(p.items) && p.items.some(it =>
-        String(it.equipmentName || "").toLowerCase().includes(q)
-      ))
+  const fmt = (d) => d ? String(d) : "—"
+
+  /* ── Purchase Card ── */
+  const PurchaseCard = ({ p }) => {
+    const items = Array.isArray(p.items) ? p.items : []
+    return (
+      <div className="to-card">
+        <div className="to-card-top">
+          <div className="to-card-title">
+            <span style={{ color: "var(--to-blue)", fontWeight: 800 }}>PR #{p.id}</span>
+            <span style={{ color: "var(--to-text-muted)", fontWeight: 400, fontSize: 13 }}>·</span>
+            <span style={{ fontSize: 13, fontWeight: 500 }}>{items.length} item{items.length !== 1 ? "s" : ""}</span>
+          </div>
+          <span className={purchaseSpClass(p.status)}>{purchaseStatusLabel(p.status)}</span>
+        </div>
+        <div className="to-card-body">
+          <div className="to-meta-grid">
+            <div>
+              <div className="to-mi-label">Submitted</div>
+              <div className="to-mi-value">{fmt(p.createdDate)}</div>
+            </div>
+            {p.receivedDate && (
+              <div>
+                <div className="to-mi-label">Received</div>
+                <div className="to-mi-value">{fmt(p.receivedDate)}</div>
+              </div>
+            )}
+            {p.hodComment && (
+              <div style={{ gridColumn: "1/-1" }}>
+                <div className="to-mi-label">HOD Comment</div>
+                <div className="to-mi-value" style={{ color: "var(--to-amber)", fontWeight: 500 }}>{p.hodComment}</div>
+              </div>
+            )}
+          </div>
+          {items.length > 0 && (
+            <div className="to-item-chips">
+              {items.map((it, idx) => (
+                <div key={idx} className="to-item-chip">
+                  {it.equipmentName || `Equipment #${it.equipmentId}`}
+                  <span className="chip-qty">×{it.quantityRequested ?? it.quantity}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
     )
-  }, [sortedPurchases, search])
+  }
+
+  /* ── Request History Card ── */
+  const RequestCard = ({ r }) => {
+    const it = r._item
+    return (
+      <div className="to-card">
+        <div className="to-card-top">
+          <div className="to-card-title">
+            <span style={{ color: "var(--to-blue)", fontWeight: 800 }}>#{r.requestId}</span>
+            <span style={{ color: "var(--to-text-muted)", fontWeight: 400 }}>·</span>
+            <span>{it.equipmentName || `Equipment #${it.equipmentId}`}</span>
+          </div>
+          <span className={itemSpClass(it.itemStatus)}>{itemStatusLabel(it.itemStatus)}</span>
+        </div>
+        <div className="to-card-body">
+          <div className="to-meta-grid">
+            <div>
+              <div className="to-mi-label">Requester</div>
+              <div className="to-mi-value">{r.requesterFullName || "—"}</div>
+            </div>
+            <div>
+              <div className="to-mi-label">Reg / ID</div>
+              <div className="to-mi-value muted">{r.requesterRegNo || "—"}</div>
+            </div>
+            <div>
+              <div className="to-mi-label">Role</div>
+              <div className="to-mi-value muted">{r.requesterRole || "—"}</div>
+            </div>
+            <div>
+              <div className="to-mi-label">Lab</div>
+              <div className="to-mi-value">{r.labName || "—"}</div>
+            </div>
+            <div>
+              <div className="to-mi-label">Period</div>
+              <div className="to-mi-value">{r.fromDate || "—"} → {r.toDate || "—"}</div>
+            </div>
+            <div>
+              <div className="to-mi-label">Qty / Issued</div>
+              <div className="to-mi-value">
+                {it.quantity ?? "—"}
+                {it.issuedQty != null && ` / ${it.issuedQty} issued`}
+              </div>
+            </div>
+            {it.damaged != null && (
+              <div>
+                <div className="to-mi-label">Damaged</div>
+                <div className="to-mi-value" style={{ color: it.damaged ? "var(--to-red)" : "var(--to-green)" }}>
+                  {it.damaged ? "Yes" : "No"}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="dashboard-container">
@@ -140,87 +265,50 @@ export default function TOHistory() {
           <div className="to-page-header">
             <div>
               <div className="to-page-title">History</div>
-              <div className="to-page-subtitle">Completed equipment returns and purchase requests</div>
+              <div className="to-page-subtitle">Purchase requests and completed equipment transactions</div>
             </div>
           </div>
 
           {error && <div className="to-alert to-alert-error">{error}</div>}
 
-          {/* Summary stats */}
-          <div className="to-stat-grid">
-            <div className="to-stat-card slate">
-              <div className="to-stat-label">Total Returns</div>
-              <div className="to-stat-value">{loading ? "–" : completedItems.length}</div>
+          {loading && (
+            <div className="to-empty">
+              <div className="to-empty-icon">⏳</div>
+              <div className="to-empty-text">Loading history…</div>
             </div>
-            <div className="to-stat-card red">
-              <div className="to-stat-label">Damaged Items</div>
-              <div className="to-stat-value">{loading ? "–" : completedItems.filter(r => r._item.itemStatus === "DAMAGED_REPORTED").length}</div>
-            </div>
-            <div className="to-stat-card blue">
-              <div className="to-stat-label">Purchase Requests</div>
-              <div className="to-stat-value">{loading ? "–" : purchaseRows.length}</div>
-            </div>
-            <div className="to-stat-card green">
-              <div className="to-stat-label">Purchases Received</div>
-              <div className="to-stat-value">{loading ? "–" : purchaseRows.filter(p =>
-                ["RECEIVED_BY_HOD","RECEIVED_BY_TO"].includes(String(p.status || "").toUpperCase())
-              ).length}</div>
-            </div>
-          </div>
+          )}
 
-          {/* Tabs */}
-          <div className="to-tab-bar">
-            {TABS.map(t => (
-              <button key={t.key}
-                className={`to-tab${tab === t.key ? " active" : ""}`}
-                onClick={() => { setTab(t.key); setSearch("") }}>
-                {t.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Search */}
-          <div className="to-filter-bar">
-            <div className="to-filter-wrap">
-              <FaSearch size={12} />
-              <input className="to-filter-input"
-                placeholder={tab === "returns" ? "Search requester, equipment, lab…" : "Search purchase ID, equipment…"}
-                value={search} onChange={e => setSearch(e.target.value)} />
-            </div>
-          </div>
-
-          {loading && <div className="to-empty"><div className="to-empty-icon">⏳</div><div className="to-empty-text">Loading…</div></div>}
-
-          {/* ── RETURNS TAB ── */}
-          {!loading && tab === "returns" && (
+          {!loading && (
             <>
-              {(returnsPie.length > 0 || roleBar.length > 0) && (
-                <div className="to-chart-grid-2" style={{ marginBottom: 20 }}>
-                  {returnsPie.length > 0 && (
+              {/* Summary Charts */}
+              {(purchasePieData.length > 0 || returnPieData.length > 0) && (
+                <div className="to-chart-grid-2" style={{ marginBottom: 28 }}>
+                  {purchasePieData.length > 0 && (
                     <div className="to-chart-card">
-                      <div className="to-chart-title">Return Outcomes</div>
+                      <div className="to-chart-title">Purchase Status Breakdown</div>
                       <ResponsiveContainer width="100%" height={200}>
                         <PieChart>
-                          <Pie data={returnsPie} cx="50%" cy="50%" innerRadius={50} outerRadius={76}
-                            dataKey="value" paddingAngle={4}>
-                            {returnsPie.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                          <Pie data={purchasePieData} cx="50%" cy="50%" outerRadius={72} dataKey="value">
+                            {purchasePieData.map((_, i) => (
+                              <Cell key={i} fill={PIE_COLORS_P[i % PIE_COLORS_P.length]} />
+                            ))}
                           </Pie>
                           <Tooltip />
-                          <Legend iconType="circle" iconSize={9} wrapperStyle={{ fontSize: 11 }} />
+                          <Legend iconSize={10} />
                         </PieChart>
                       </ResponsiveContainer>
                     </div>
                   )}
-                  {roleBar.length > 0 && (
+                  {equipBarData.length > 0 && (
                     <div className="to-chart-card">
-                      <div className="to-chart-title">Returns by Requester Role</div>
+                      <div className="to-chart-title">Most Returned Equipment</div>
                       <ResponsiveContainer width="100%" height={200}>
-                        <BarChart data={roleBar} margin={{ top: 4, right: 20, bottom: 4, left: 0 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                          <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                          <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+                        <BarChart data={equipBarData} layout="vertical" margin={{ top: 4, right: 20, left: 0, bottom: 4 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
+                          <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} />
+                          <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} width={90} />
                           <Tooltip />
-                          <Bar dataKey="count" fill="#64748b" radius={[4, 4, 0, 0]} name="Items" />
+                          <Bar dataKey="count" fill="#16a34a" radius={[0, 4, 4, 0]} name="Returns" />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
@@ -228,113 +316,72 @@ export default function TOHistory() {
                 </div>
               )}
 
-              {filteredReturns.length === 0
-                ? <div className="to-empty"><div className="to-empty-icon">📋</div><div className="to-empty-text">{search ? "No matching records" : "No completed returns yet"}</div></div>
-                : (
-                  <div className="to-table-wrap">
-                    <table className="to-table">
-                      <thead>
-                        <tr>
-                          <th>#ID</th><th>Requester</th><th>Role</th><th>Lab</th>
-                          <th>Equipment</th><th className="tc">Qty</th>
-                          <th>From</th><th>To</th><th>Outcome</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredReturns.map(r => {
-                          const it = r._item
-                          const { label, cls } = itemStatusPill(it.itemStatus)
-                          return (
-                            <tr key={`${r.requestId}-${it.requestItemId}`}>
-                              <td className="to-id">#{r.requestId}</td>
-                              <td>
-                                <div style={{ fontWeight: 600 }}>{r.requesterFullName || "–"}</div>
-                                {r.requesterRegNo && <div className="to-muted">{r.requesterRegNo}</div>}
-                              </td>
-                              <td className="to-muted">{r.requesterRole || "–"}</td>
-                              <td>{r.labName || "–"}</td>
-                              <td style={{ fontWeight: 600 }}>{it.equipmentName || "–"}</td>
-                              <td className="tc">{it.quantity}</td>
-                              <td className="to-muted">{r.fromDate || "–"}</td>
-                              <td className="to-muted">{r.toDate   || "–"}</td>
-                              <td><span className={`to-sp ${cls}`}>{label}</span></td>
-                            </tr>
-                          )
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )
-              }
-            </>
-          )}
+              {/* Tabs */}
+              <div className="to-tab-bar">
+                {TABS.map(t => (
+                  <button
+                    key={t.id}
+                    className={`to-tab-item${tab === t.id ? " active" : ""}`}
+                    onClick={() => setTab(t.id)}
+                  >
+                    {t.label}
+                    <span style={{
+                      marginLeft: 6, fontSize: 11, fontWeight: 700,
+                      background: tab === t.id ? "var(--to-blue-pale)" : "var(--to-slate-200)",
+                      color: tab === t.id ? "var(--to-blue)" : "var(--to-slate-600)",
+                      padding: "1px 6px", borderRadius: 10,
+                    }}>
+                      {t.id === "purchases" ? purchaseRows.length : t.id === "students" ? studentHistory.length : lecturerHistory.length}
+                    </span>
+                  </button>
+                ))}
+              </div>
 
-          {/* ── PURCHASES TAB ── */}
-          {!loading && tab === "purchases" && (
-            <>
-              {purchasePie.length > 0 && (
-                <div className="to-chart-card" style={{ marginBottom: 20 }}>
-                  <div className="to-chart-title">Purchase Status Distribution</div>
-                  <ResponsiveContainer width="100%" height={200}>
-                    <PieChart>
-                      <Pie data={purchasePie} cx="50%" cy="50%" innerRadius={50} outerRadius={76}
-                        dataKey="value" paddingAngle={4}>
-                        {purchasePie.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-                      </Pie>
-                      <Tooltip />
-                      <Legend iconType="circle" iconSize={9} wrapperStyle={{ fontSize: 11 }} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
+              {/* Tab Content: Purchases */}
+              {tab === "purchases" && (
+                <>
+                  {purchaseRows.length === 0 ? (
+                    <div className="to-empty">
+                      <div className="to-empty-icon">📦</div>
+                      <div className="to-empty-text">No purchase requests found</div>
+                    </div>
+                  ) : (
+                    purchaseRows.map(p => <PurchaseCard key={p.id} p={p} />)
+                  )}
+                </>
               )}
 
-              {filteredPurchases.length === 0
-                ? <div className="to-empty"><div className="to-empty-icon">🛒</div><div className="to-empty-text">{search ? "No matching purchases" : "No purchase requests yet"}</div></div>
-                : filteredPurchases.map(p => {
-                    const items = Array.isArray(p.items) ? p.items : []
-                    const { label, cls } = purchaseStatusPill(p.status)
-                    return (
-                      <div key={p.id} className="to-purchase-card">
-                        <div className="to-purchase-card-top">
-                          <div className="to-card-title">
-                            <span className="to-id">Purchase #{p.id}</span>
-                            <span className={`to-sp ${cls}`}>{label}</span>
-                          </div>
-                          <div style={{ fontSize: 12, color: "var(--to-text-muted)", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                            {p.createdDate && `Submitted: ${p.createdDate}`}
-                            {p.issuedDate   && ` · Issued: ${p.issuedDate}`}
-                            {p.receivedDate && ` · Received: ${p.receivedDate}`}
-                          </div>
-                        </div>
-                        <div className="to-purchase-card-body">
-                          {/* Items */}
-                          <div style={{ marginBottom: items.length > 0 ? 10 : 0 }}>
-                            {items.map((it, idx) => (
-                              <div key={idx} style={{
-                                display: "flex", alignItems: "center", gap: 10,
-                                padding: "8px 12px", borderRadius: 8,
-                                background: "var(--to-slate-50)",
-                                border: "1px solid var(--to-slate-200)",
-                                marginBottom: 6, fontFamily: "'Plus Jakarta Sans', sans-serif"
-                              }}>
-                                <span style={{ fontWeight: 700, fontSize: 13.5, color: "var(--to-text)" }}>
-                                  {it.equipmentName || `Item ${idx + 1}`}
-                                </span>
-                                <span className="to-muted">×{it.quantity ?? it.quantityRequested ?? "–"}</span>
-                              </div>
-                            ))}
-                          </div>
-                          {p.reason && (
-                            <div style={{ fontSize: 12, color: "var(--to-text-muted)",
-                              fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                              Note: {p.reason}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )
-                  })
-              }
+              {/* Tab Content: Student / Instructor History */}
+              {tab === "students" && (
+                <>
+                  {studentHistory.length === 0 ? (
+                    <div className="to-empty">
+                      <div className="to-empty-icon">📋</div>
+                      <div className="to-empty-text">No completed student / instructor transactions</div>
+                    </div>
+                  ) : (
+                    studentHistory.map(r => (
+                      <RequestCard key={`${r.requestId}-${r._item.requestItemId}`} r={r} />
+                    ))
+                  )}
+                </>
+              )}
+
+              {/* Tab Content: Lecturer History */}
+              {tab === "lecturers" && (
+                <>
+                  {lecturerHistory.length === 0 ? (
+                    <div className="to-empty">
+                      <div className="to-empty-icon">🎓</div>
+                      <div className="to-empty-text">No completed lecturer transactions</div>
+                    </div>
+                  ) : (
+                    lecturerHistory.map(r => (
+                      <RequestCard key={`${r.requestId}-${r._item.requestItemId}`} r={r} />
+                    ))
+                  )}
+                </>
+              )}
             </>
           )}
 
