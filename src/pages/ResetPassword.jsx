@@ -1,92 +1,133 @@
-import "../styles/login.css"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
-import { useRequests } from "../context/RequestContext"
+import { AuthAPI } from "../api/api"
+import "../styles/auth.css"
+
+const strongPattern = /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}/
 
 export default function ResetPassword() {
-  const [params] = useSearchParams()
-  const token = params.get("token") || ""
-
-  const [password, setPassword] = useState("")
-  const [confirm, setConfirm] = useState("")
-  const [error, setError] = useState("")
-  const [status, setStatus] = useState("")
-  const [loading, setLoading] = useState(false)
-
   const navigate = useNavigate()
-  const { resetPasswordWithToken } = useRequests()
+  const [searchParams] = useSearchParams()
+  const token = searchParams.get("token")
+
+  const [newPassword, setNewPassword]   = useState("")
+  const [confirm,     setConfirm]       = useState("")
+  const [error,       setError]         = useState("")
+  const [success,     setSuccess]       = useState("")
+  const [loading,     setLoading]       = useState(false)
+
+  const isWeak     = newPassword.length > 0 && !strongPattern.test(newPassword)
+  const isMismatch = confirm.length > 0 && newPassword !== confirm
+
+  useEffect(() => {
+    if (!token) {
+      setError("No reset token found. Please use the link from your email.")
+    }
+  }, [token])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError("")
-    setStatus("")
+    setSuccess("")
 
     if (!token) {
-      setError("Missing reset token. Please use the link from your email.")
+      setError("No reset token. Please use the link from your email.")
       return
     }
-    if (!password || !confirm) {
+    if (!newPassword || !confirm) {
       setError("Please fill all fields")
       return
     }
-    if (password !== confirm) {
+    if (!strongPattern.test(newPassword)) {
+      setError("Password must be 8+ characters with uppercase, lowercase, number and special character (@$!%*?&)")
+      return
+    }
+    if (newPassword !== confirm) {
       setError("Passwords do not match")
       return
     }
 
-    setLoading(true)
     try {
-      const result = await resetPasswordWithToken({ token, newPassword: password })
-      if (!result.ok) {
-        setError(result.message || "Reset failed")
-        return
-      }
-      setStatus("Password updated successfully. Redirecting to login...")
-      setTimeout(() => navigate("/login"), 900)
+      setLoading(true)
+      // POST /api/auth/reset-password  { token, newPassword }
+      await AuthAPI.resetPassword({ token, newPassword })
+      setSuccess("Password reset successfully! Redirecting to login…")
+      setTimeout(() => navigate("/login"), 2000)
     } catch (err) {
-      setError(err?.message || "Could not reset password. Please try again.")
+      setError(err?.message || "Reset failed. The link may have expired. Please request a new one.")
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="login-bg">
-      <div className="login-back-box"></div>
+    <div className="auth-page">
+      <div className="auth-card">
+        <div className="auth-logo">
+          <img src="/images/logo.png" alt="Logo" />
+        </div>
+        <h2>Set New Password</h2>
+        <p className="auth-sub">Enter your new password below.</p>
 
-      <form className="login-box" onSubmit={handleSubmit}>
-        <h2>Reset Password</h2>
-        <p>Set a new password for your account</p>
+        {!token ? (
+          <div className="auth-error">
+            ⚠ No reset token found. Please use the link from your email or{" "}
+            <span className="auth-link" onClick={() => navigate("/login")}>go back to login</span>.
+          </div>
+        ) : success ? (
+          <div className="auth-success">✓ {success}</div>
+        ) : (
+          <form onSubmit={handleSubmit} className="auth-form">
+            <div className="form-group">
+              <label>New Password</label>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                placeholder="Min 8 chars, uppercase, number, symbol"
+                disabled={loading}
+              />
+              {isWeak && (
+                <small className="field-error">
+                  Must be 8+ characters with uppercase, lowercase, number &amp; special character
+                </small>
+              )}
+            </div>
 
-        {error && <p style={{ color: "red", marginTop: "10px", fontSize: "14px" }} className="error">{error}</p>}
-        {status && <p style={{ color: "#0f5132", fontSize: 12 }}>{status}</p>}
+            <div className="form-group">
+              <label>Confirm New Password</label>
+              <input
+                type="password"
+                value={confirm}
+                onChange={e => setConfirm(e.target.value)}
+                placeholder="Confirm your new password"
+                disabled={loading}
+              />
+              {isMismatch && (
+                <small className="field-error">Passwords do not match</small>
+              )}
+            </div>
 
-        <label>New Password</label>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="New password"
-          required
-        />
+            <div className="auth-pwd-req">
+              Password requirements: 8+ characters · uppercase &amp; lowercase · number · special character (@$!%*?&amp;)
+            </div>
 
-        <label>Confirm Password</label>
-        <input
-          type="password"
-          value={confirm}
-          onChange={(e) => setConfirm(e.target.value)}
-          placeholder="Confirm password"
-          required
-        />
+            {error && <div className="auth-error">⚠ {error}</div>}
 
-        <button type="submit" disabled={loading}>
-          {loading ? "Updating..." : "Update Password"}
-        </button>
+            <button
+              type="submit"
+              className="btn-login"
+              disabled={loading || isWeak || isMismatch || !newPassword || !confirm}
+            >
+              {loading ? "Resetting…" : "Reset Password"}
+            </button>
 
-        <p>
-          <span className="link" onClick={() => navigate("/login")}>Back to Login</span>
-        </p>
-      </form>
+            <p className="auth-link-row" onClick={() => navigate("/login")}>
+              ← Back to Login
+            </p>
+          </form>
+        )}
+      </div>
     </div>
   )
 }

@@ -1,75 +1,85 @@
 import "../styles/login.css"
 import { useState, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
-import { useRequests } from "../context/RequestContext"
+import { AuthAPI } from "../api/api"
 import ForgotModal from "../components/ForgotModal"
 
 export default function LoginSignup() {
   const navigate = useNavigate()
-  const { authenticate, registerStudent } = useRequests()
   const [showForgot, setShowForgot] = useState(false)
   const [showSignup, setShowSignup] = useState(false)
 
-  // ---------- LOGIN STATE ---------
-  const [loginEmail, setLoginEmail] = useState("")
+  // ── Login State ──
+  const [loginEmail, setLoginEmail]       = useState("")
   const [loginPassword, setLoginPassword] = useState("")
-  const [loginError, setLoginError] = useState("")
+  const [loginError, setLoginError]       = useState("")
+  const [loginLoading, setLoginLoading]   = useState(false)
 
-  // ---------- SIGNUP STATE ----------
-  const [fullName, setFullName] = useState("")
-  const [regNo, setRegNo] = useState("")
-  const [department, setDepartment] = useState("")
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [confirm, setConfirm] = useState("")
-  const [signupError, setSignupError] = useState("")
+  // ── Signup State ──
+  const [fullName, setFullName]           = useState("")
+  const [regNo, setRegNo]                 = useState("")
+  const [department, setDepartment]       = useState("")
+  const [email, setEmail]                 = useState("")
+  const [password, setPassword]           = useState("")
+  const [confirm, setConfirm]             = useState("")
+  const [signupError, setSignupError]     = useState("")
   const [signupSuccess, setSignupSuccess] = useState("")
+  const [signupLoading, setSignupLoading] = useState(false)
 
   const strongPattern = useMemo(
     () => /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}/,
     []
   )
+  const isWeakPassword     = password.length > 0 && !strongPattern.test(password)
+  const isConfirmMismatch  = confirm.length > 0 && password !== confirm
 
-  const isWeakPassword = password.length > 0 && !strongPattern.test(password)
-  const isConfirmMismatch = confirm.length > 0 && password !== confirm
-
-  // ---------- LOGIN HANDLER ----------
+  // ── Login Handler ──
   const handleLogin = async (e) => {
     e.preventDefault()
     setLoginError("")
-
     if (!loginEmail || !loginPassword) {
       setLoginError("Please fill all fields")
       return
     }
-
     try {
-      const user = await authenticate(loginEmail, loginPassword)
-      if (!user || !user.role) {
-        setLoginError("Invalid login credentials")
+      setLoginLoading(true)
+      // Backend returns: { message, token, email, role }
+      const data = await AuthAPI.login(loginEmail, loginPassword)
+
+      if (!data?.token || !data?.role) {
+        setLoginError("Invalid login response from server")
         return
       }
 
-      // Save role in localStorage
-      localStorage.setItem("role", user.role.toLowerCase())
+      // Store token and role for subsequent API calls and sidebar rendering
+      localStorage.setItem("token", data.token)
+      localStorage.setItem("role", data.role.toLowerCase())
 
-      // Redirect based on role
-      const redirectPaths = {
-        staff:"/student-dashboard",
-        student: "/student-dashboard",
-        lecturer: "/lecturer-dashboard",
-        to: "/to-dashboard",
-        hod: "/hod-dashboard",
-        admin: "/admin-dashboard",
+      // Role → dashboard redirect
+      const redirectMap = {
+        student:    "/student-dashboard",
+        staff:      "/instructor-dashboard",  // STAFF uses instructor pages
+        instructor: "/instructor-dashboard",
+        lecturer:   "/lecturer-dashboard",
+        to:         "/to-dashboard",
+        hod:        "/hod-my-work",           // /hod-dashboard redirects to /hod-my-work anyway
+        admin:      "/admin-dashboard",
       }
-
-      navigate(redirectPaths[user.role.toLowerCase()] || "/login")
+      const path = redirectMap[data.role.toLowerCase()] || "/login"
+      navigate(path)
     } catch (err) {
       setLoginError(err?.message || "Invalid email or password")
+    } finally {
+      setLoginLoading(false)
     }
   }
 
-  // ---------- SIGNUP HANDLER ----------
+  // ── Signup Handler ──
+  // Backend validates:
+  //   - Email format: 20XXeXXX@eng.jfn.ac.lk
+  //   - RegNo format: 2022/E/063
+  //   - Email must match regNo (2022/E/063 → 2022e063@eng.jfn.ac.lk)
+  //   - No duplicate email or regNo
   const handleSignup = async (e) => {
     e.preventDefault()
     setSignupError("")
@@ -80,7 +90,7 @@ export default function LoginSignup() {
       return
     }
     if (isWeakPassword) {
-      setSignupError("Please use a strong password")
+      setSignupError("Password must be 8+ characters with uppercase, lowercase, number and special character")
       return
     }
     if (isConfirmMismatch) {
@@ -89,27 +99,24 @@ export default function LoginSignup() {
     }
 
     try {
-      await registerStudent({ name: fullName, regNo, department, email, password })
+      setSignupLoading(true)
+      // Backend expects: fullName, email, regNo, department, password
+      await AuthAPI.signupStudent({ fullName, email, regNo, department, password })
 
-      // Clear form
-      setFullName("")
-      setRegNo("")
-      setDepartment("")
-      setEmail("")
-      setPassword("")
-      setConfirm("")
-
-      setSignupError("")
-      setSignupSuccess("Account created! Please check your email to verify, then sign in.")
+      setFullName(""); setRegNo(""); setDepartment("")
+      setEmail(""); setPassword(""); setConfirm("")
+      setSignupSuccess("Account created successfully! You can now sign in.")
     } catch (err) {
-      setSignupError(err?.message || "Signup failed")
+      setSignupError(err?.message || "Signup failed. Please check your details.")
+    } finally {
+      setSignupLoading(false)
     }
   }
 
   return (
     <div className="login-bg">
       <div className="sliding-container">
-        {/* LEFT PANEL */}
+        {/* ── Left Panel ── */}
         <div className="login-left">
           {showSignup ? (
             <>
@@ -118,98 +125,169 @@ export default function LoginSignup() {
             </>
           ) : (
             <>
-              <h1>Welcome Back!</h1>
-              <p>Enter your personal details to login</p>
+              <h1>Welcome Back</h1>
+              <p>Sign in to access the Equipment Request Management System</p>
             </>
           )}
+          <div className="login-brand">
+            <img src="/images/logo.png" alt="Logo" className="login-logo" />
+            <span>University of Jaffna · Faculty of Engineering</span>
+          </div>
         </div>
 
-        {/* RIGHT FORM */}
-        <div className="form-container">
-          {!showSignup ? (
-            <form className="login-box" onSubmit={handleLogin}>
-              <h2>Login</h2>
-              {loginError && <p className="error">{loginError}</p>}
+        {/* ── Right Panel ── */}
+        <div className="login-right">
+          {/* Tab switcher */}
+          <div className="login-tabs">
+            <button
+              className={`login-tab ${!showSignup ? "active" : ""}`}
+              onClick={() => { setShowSignup(false); setLoginError("") }}
+            >
+              Sign In
+            </button>
+            <button
+              className={`login-tab ${showSignup ? "active" : ""}`}
+              onClick={() => { setShowSignup(true); setSignupError(""); setSignupSuccess("") }}
+            >
+              Register
+            </button>
+          </div>
 
-              <label>Email</label>
-              <input
-                type="email"
-                value={loginEmail}
-                onChange={(e) => setLoginEmail(e.target.value)}
-                placeholder="Enter your email"
-                required
-              />
+          {/* ── Login Form ── */}
+          {!showSignup && (
+            <form className="login-form" onSubmit={handleLogin}>
+              <div className="form-group">
+                <label>Email Address</label>
+                <input
+                  type="email"
+                  value={loginEmail}
+                  onChange={e => setLoginEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  autoComplete="email"
+                  disabled={loginLoading}
+                />
+              </div>
 
-              <label>Password</label>
-              <input
-                type="password"
-                value={loginPassword}
-                onChange={(e) => setLoginPassword(e.target.value)}
-                placeholder="Enter your password"
-                required
-              />
+              <div className="form-group">
+                <label>Password</label>
+                <input
+                  type="password"
+                  value={loginPassword}
+                  onChange={e => setLoginPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  autoComplete="current-password"
+                  disabled={loginLoading}
+                />
+              </div>
 
-              <div className="options">
-  <span className="link" onClick={() => setShowForgot(true)}>
-    Forgot Password?
-  </span>
-</div>
+              {loginError && <div className="form-error">{loginError}</div>}
 
-              <button type="submit" className="login-btn">Sign In</button>
+              <button type="submit" className="btn-login" disabled={loginLoading}>
+                {loginLoading ? "Signing in…" : "Sign In"}
+              </button>
 
-              <p>
-                New here?{" "}
-                <span className="link" onClick={() => setShowSignup(true)}>Sign Up</span>
+              <p className="forgot-link" onClick={() => setShowForgot(true)}>
+                Forgot your password?
               </p>
             </form>
-          ) : (
-            <form className="signup-box" onSubmit={handleSignup}>
-              <h2>Create Account</h2>
-              {signupError && <p className="error">{signupError}</p>}
-              {signupSuccess && <p className="success">{signupSuccess}</p>}
+          )}
 
-              <label>Full Name</label>
-              <input value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+          {/* ── Signup Form ── */}
+          {showSignup && (
+            <form className="login-form" onSubmit={handleSignup}>
+              {signupSuccess && (
+                <div className="form-success">{signupSuccess}</div>
+              )}
 
-              <label>Registration Number</label>
-              <input placeholder="2022/E/XXX" value={regNo} onChange={(e) => setRegNo(e.target.value)} required />
+              <div className="form-group">
+                <label>Full Name</label>
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={e => setFullName(e.target.value)}
+                  placeholder="Your full name"
+                  disabled={signupLoading}
+                />
+              </div>
 
-              <label>Department</label>
-              <select value={department} onChange={(e) => setDepartment(e.target.value)} required>
-                <option value="">-- Select Department --</option>
-                <option value="CE">Computer Engineering</option>
-                <option value="EEE">Electrical & Electronic Engineering</option>
-              </select>
+              <div className="form-group">
+                <label>Registration Number</label>
+                <input
+                  type="text"
+                  value={regNo}
+                  onChange={e => setRegNo(e.target.value)}
+                  placeholder="2022/E/063"
+                  disabled={signupLoading}
+                />
+                <small className="field-hint">Format: 2022/E/063</small>
+              </div>
 
-              <label>Email</label>
-              <input
-                type="email"
-                pattern="20[0-9]{2}e[0-9]{3}@eng\.jfn\.ac\.lk"
-                placeholder="20XXeXXX@eng.jfn.ac.lk"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
+              <div className="form-group">
+                <label>Department</label>
+                <select
+                  value={department}
+                  onChange={e => setDepartment(e.target.value)}
+                  disabled={signupLoading}
+                >
+                  <option value="">— Select Department —</option>
+                  <option value="CE">Computer Engineering</option>
+                  <option value="EEE">Electrical &amp; Electronic Engineering</option>
+                </select>
+              </div>
 
-              <label>Password</label>
-              <input type="password" placeholder="Min 8 chars, Aa1@" value={password} onChange={(e) => setPassword(e.target.value)} required />
-              {isWeakPassword && <small className="error-text">Must be 8+ characters with uppercase, lowercase, number & symbol</small>}
+              <div className="form-group">
+                <label>Email Address</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="2022e063@eng.jfn.ac.lk"
+                  disabled={signupLoading}
+                />
+                <small className="field-hint">Must match your registration number</small>
+              </div>
 
-              <label>Confirm Password</label>
-              <input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
-              {isConfirmMismatch && <small className="error-text">Passwords do not match</small>}
+              <div className="form-group">
+                <label>Password</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="Min 8 chars, uppercase, number, symbol"
+                  disabled={signupLoading}
+                />
+                {isWeakPassword && (
+                  <small className="field-error">
+                    Must be 8+ characters with uppercase, lowercase, number &amp; special character
+                  </small>
+                )}
+              </div>
 
-              <button type="submit">Sign Up</button>
+              <div className="form-group">
+                <label>Confirm Password</label>
+                <input
+                  type="password"
+                  value={confirm}
+                  onChange={e => setConfirm(e.target.value)}
+                  placeholder="Confirm your password"
+                  disabled={signupLoading}
+                />
+                {isConfirmMismatch && (
+                  <small className="field-error">Passwords do not match</small>
+                )}
+              </div>
 
-              <p>
-                Already have an account?{" "}
-                <span className="link" onClick={() => setShowSignup(false)}>Sign In</span>
-              </p>
+              {signupError && <div className="form-error">{signupError}</div>}
+
+              <button type="submit" className="btn-login" disabled={signupLoading || isWeakPassword || isConfirmMismatch}>
+                {signupLoading ? "Creating account…" : "Create Account"}
+              </button>
             </form>
           )}
         </div>
       </div>
-          {showForgot && <ForgotModal onClose={() => setShowForgot(false)} />}
+
+      {showForgot && <ForgotModal onClose={() => setShowForgot(false)} />}
     </div>
   )
 }

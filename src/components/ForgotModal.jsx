@@ -1,39 +1,30 @@
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
-import { useRequests } from "../context/RequestContext"
+import { AuthAPI } from "../api/api"
 
 export default function ForgotModal({ onClose }) {
-  const [email, setEmail] = useState("")
-  const [status, setStatus] = useState("")
-  const [error, setError] = useState("")
+  const [email,   setEmail]   = useState("")
+  const [status,  setStatus]  = useState("") // success message
+  const [error,   setError]   = useState("")
   const [loading, setLoading] = useState(false)
-
-  const navigate = useNavigate()
-  const { requestPasswordReset } = useRequests()
+  const [sent,    setSent]    = useState(false)
 
   const handleSend = async () => {
     setError("")
     setStatus("")
-
     const e = (email || "").trim()
     if (!e) {
-      setError("Please enter your email")
+      setError("Please enter your email address")
       return
     }
-
-    setLoading(true)
     try {
-      const result = await requestPasswordReset({ email: e })
-      setStatus(result.message || "If this email exists, a reset link has been sent. Please check your inbox.")
-
-      // User will open the link from email (preferred).
-      // Keep this optional: if they already have a token link, they can open /reset-password?token=...
-      setTimeout(() => {
-        navigate("/login")
-        onClose()
-      }, 900)
+      setLoading(true)
+      // POST /api/auth/forgot-password  { email }
+      // Backend always returns 200 with same message (security by design — doesn't reveal if email exists)
+      await AuthAPI.forgotPassword(e)
+      setStatus("If this email exists in our system, a password reset link has been sent. Please check your inbox.")
+      setSent(true)
     } catch (err) {
-      setError("Could not send reset link. Please try again.")
+      setError(err?.message || "Could not send reset link. Please try again.")
     } finally {
       setLoading(false)
     }
@@ -41,28 +32,51 @@ export default function ForgotModal({ onClose }) {
 
   return (
     <div className="overlay">
-      <div className="overlay-box">
+      <div className="overlay-box" style={{ maxWidth: 460 }}>
         <h2>Forgot Password</h2>
-
-        <label>Email</label>
-        <input
-          type="email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="Enter your email"
-        />
-
-        {error && <p style={{ color: "red", fontSize: 12 }}>{error}</p>}
-        {status && <p style={{ color: "#0f5132", fontSize: 12 }}>{status}</p>}
-
-        <button onClick={handleSend} disabled={loading}>
-          {loading ? "Sending..." : "Send Reset Link"}
-        </button>
-
-        <p className="close-link" onClick={onClose}>
-          Cancel
+        <p style={{ marginTop: -4, marginBottom: 16, fontSize: 13, opacity: 0.7, lineHeight: 1.5 }}>
+          Enter your registered email address and we will send you a password reset link.
         </p>
+
+        {!sent ? (
+          <>
+            <label>Email Address</label>
+            <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="your@email.com"
+              disabled={loading}
+              onKeyDown={e => e.key === "Enter" && handleSend()}
+            />
+
+            {error  && <p style={{ color: "red",     fontSize: 12, marginTop: 8 }}>{error}</p>}
+
+            <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
+              <button onClick={handleSend} disabled={loading} style={{ flex: 1 }}>
+                {loading ? "Sending…" : "Send Reset Link"}
+              </button>
+              <button onClick={onClose} className="btn-cancel" type="button" style={{ flex: 1 }}>
+                Cancel
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{
+              padding: "14px 16px", background: "#f0fdf4", border: "1px solid #bbf7d0",
+              borderRadius: 8, fontSize: 13, color: "#15803d", lineHeight: 1.6, marginBottom: 16,
+            }}>
+              ✓ {status}
+            </div>
+            <p style={{ fontSize: 13, color: "#64748b" }}>
+              Open the link in the email to set a new password. The link expires in 1 hour.
+            </p>
+            <button onClick={onClose} style={{ marginTop: 14, width: "100%" }}>
+              Close
+            </button>
+          </>
+        )}
       </div>
     </div>
   )
