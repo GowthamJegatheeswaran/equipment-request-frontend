@@ -109,9 +109,6 @@ export default function HodLabManagement() {
             <div className="stat-card slate">
               <div className="stat-label">Available TOs</div>
               <div className="stat-value">{toUsers.length}</div>
-              <div className="stat-sub" style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
-                A TO can manage multiple labs
-              </div>
             </div>
           </div>
 
