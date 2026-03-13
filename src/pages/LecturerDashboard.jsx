@@ -41,6 +41,19 @@ function reqSemanticLabel(status) {
 
 const PIE_COLORS = ["#d97706","#16a34a","#dc2626","#2563eb","#7c3aed","#0891b2"]
 
+/* True if ALL items in the request are fully returned/verified */
+function isFullyCompleted(r) {
+  const items = Array.isArray(r?.items) ? r.items : []
+  if (!items.length) {
+    const u = String(r.status || "").toUpperCase()
+    return u === "RETURN_VERIFIED" || u === "RETURNED_VERIFIED" || u === "DAMAGED_REPORTED"
+  }
+  return items.every(it => {
+    const s = String(it.itemStatus || "").toUpperCase()
+    return s === "RETURN_VERIFIED" || s === "DAMAGED_REPORTED"
+  })
+}
+
 function firstItemLabel(r) {
   const items = Array.isArray(r?.items) ? r.items : []
   if (!items.length) return "–"
@@ -90,8 +103,9 @@ export default function LecturerDashboard() {
       pendingRequests: queue.length,
       pendingItems,
       totalMine:    myRows.length,
-      activeMine:   myRows.filter(r => !["RETURN_VERIFIED","DAMAGED_REPORTED","REJECTED_BY_LECTURER"].includes(String(r.status || "").toUpperCase())).length,
-      returnedMine: myRows.filter(r => String(r.status || "").toUpperCase() === "RETURN_VERIFIED").length,
+      activeMine:   myRows.filter(r => String(r.status || "").toUpperCase() !== "REJECTED_BY_LECTURER" && !isFullyCompleted(r)).length,
+      rejectedMine: myRows.filter(r => String(r.status || "").toUpperCase() === "REJECTED_BY_LECTURER").length,
+      returnedMine: myRows.filter(isFullyCompleted).length,
     }
   }, [queue, myRows])
 
@@ -153,9 +167,15 @@ export default function LecturerDashboard() {
               <div className="lt-stat-value">{loading ? "–" : counts.activeMine}</div>
               <div className="lt-stat-sub">In progress</div>
             </div>
+            <div className="lt-stat-card red">
+              <div className="lt-stat-label">Rejected</div>
+              <div className="lt-stat-value">{loading ? "–" : counts.rejectedMine}</div>
+              <div className="lt-stat-sub">Declined by lecturer</div>
+            </div>
             <div className="lt-stat-card cyan">
-              <div className="lt-stat-label">Returned</div>
+              <div className="lt-stat-label">Completed</div>
               <div className="lt-stat-value">{loading ? "–" : counts.returnedMine}</div>
+              <div className="lt-stat-sub">All items returned</div>
             </div>
           </div>
 

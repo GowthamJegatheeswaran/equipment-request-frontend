@@ -18,18 +18,32 @@ import { FaSearch } from "react-icons/fa"
    - ISSUED_CONFIRMED + RETURNABLE    → StudentRequestAPI.submitReturnItem(requestItemId)
  ── */
 
+/* Derive accurate overall status for card header from item statuses */
+function deriveOverallStatus(r, visibleItems) {
+  const items = visibleItems || (Array.isArray(r?.items) ? r.items : [])
+  if (!items.length) return r.status
+  const statuses = items.map(it => String(it.itemStatus || "").toUpperCase())
+  if (statuses.every(s => s === "RETURN_VERIFIED" || s === "DAMAGED_REPORTED"))
+    return "RETURNED_VERIFIED"
+  if (statuses.some(s => s === "RETURN_REQUESTED" || s === "RETURN_VERIFIED"))
+    return "RETURNED_PENDING_TO_VERIFY"
+  if (statuses.some(s => s === "ISSUED_PENDING_REQUESTER_ACCEPT"))
+    return "ISSUED_PENDING_STUDENT_ACCEPT"
+  return r.status
+}
+
 const ITEM_STATUS_OPTIONS = [
-  { value: "",                              label: "All Statuses" },
+  { value: "",                              label: "All Active Statuses" },
   { value: "PENDING_LECTURER_APPROVAL",     label: "Pending Approval" },
   { value: "APPROVED_BY_LECTURER",          label: "Approved" },
-  { value: "REJECTED_BY_LECTURER",          label: "Rejected" },
   { value: "WAITING_TO_ISSUE",              label: "Waiting to Issue" },
   { value: "ISSUED_PENDING_REQUESTER_ACCEPT", label: "Issued — Awaiting Confirm" },
   { value: "ISSUED_CONFIRMED",              label: "Issued Confirmed" },
   { value: "RETURN_REQUESTED",              label: "Return Requested" },
-  { value: "RETURN_VERIFIED",               label: "Returned" },
-  { value: "DAMAGED_REPORTED",              label: "Damaged" },
 ]
+
+/* Item statuses that belong in History, not ViewRequests */
+const HISTORY_ITEM_STATUSES = new Set(["REJECTED_BY_LECTURER", "RETURN_VERIFIED", "DAMAGED_REPORTED"])
 
 function itemStatusPill(status) {
   const s = String(status || "").toUpperCase()
@@ -98,16 +112,19 @@ export default function LecturerViewRequests() {
     finally { setActioning(null) }
   }
 
-  /* Flatten to per-item rows for filtering */
+  /* Flatten to per-item rows for filtering — exclude history-only statuses by default */
   const flatItems = useMemo(() => {
     const out = []
     for (const r of rows) {
       for (const it of (Array.isArray(r.items) ? r.items : [])) {
-        out.push({ ...r, _item: it, _itemStatus: String(it?.itemStatus || "") })
+        const s = String(it?.itemStatus || "")
+        // If no explicit filter active, skip items that belong in History
+        if (!statusFilter && HISTORY_ITEM_STATUSES.has(s)) continue
+        out.push({ ...r, _item: it, _itemStatus: s })
       }
     }
     return out
-  }, [rows])
+  }, [rows, statusFilter])
 
   const filtered = useMemo(() => {
     let list = flatItems
@@ -144,7 +161,7 @@ export default function LecturerViewRequests() {
           <div className="lt-page-header">
             <div>
               <div className="lt-page-title">My Requests</div>
-              <div className="lt-page-subtitle">Track your equipment requests — confirm receipt &amp; submit returns</div>
+              <div className="lt-page-subtitle">Active requests only — rejected and returned items are in History</div>
             </div>
           </div>
 
@@ -177,7 +194,8 @@ export default function LecturerViewRequests() {
           )}
 
           {!loading && groupedByRequest.map(({ req, items }) => {
-            const { cls: rCls, label: rLabel } = reqStatusPill(req.status)
+            const derivedStatus = deriveOverallStatus(req, items)
+            const { cls: rCls, label: rLabel } = reqStatusPill(derivedStatus)
             return (
               <div key={req.requestId} className="lt-req-card">
                 <div className="lt-req-card-top">
