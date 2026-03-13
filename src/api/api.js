@@ -234,23 +234,14 @@ export const HodDepartmentAPI = {
 
 // ── HOD Lab Management ────────────────────────────────────────────────────────
 export const HodLabAPI = {
-  // GET /api/hod/labs → Lab[] (with technicalOfficer embedded)
+  // GET /api/hod/labs → LabDTO[]
   labs: () => apiFetch("/api/hod/labs"),
 
-  // GET /api/hod/department-tos → UserSummaryDTO[]
-  // Returns all TO-role users in the HOD's department regardless of email_verified status.
-  // NOTE: This endpoint must be added to the backend (see fix note below).
-  // Backend fix needed in AdminDepartmentController or a new HodController method:
-  //   @GetMapping("/api/hod/department-tos")
-  //   public List<UserSummaryDTO> getDeptTOs(Principal principal) {
-  //     String dept = userService.getDepartment(principal.getName());
-  //     return userRepository.findByDepartmentAndRole(dept, Role.TO)  // NO email_verified filter
-  //                          .stream().map(UserSummaryDTO::from).toList();
-  //   }
-  deptTOs: () => apiFetch("/api/hod/department-tos"),
+  // GET /api/hod/labs/department-tos → SimpleUserDTO[]
+  // HOD-secured endpoint — returns all TOs in the HOD's dept, no emailVerified filter.
+  deptTOs: () => apiFetch("/api/hod/labs/department-tos"),
 
   // POST /api/hod/labs/{labId}/assign-to?toUserId=X
-  // IMPORTANT: backend uses @RequestParam — must be query param, NOT request body
   assignTo: (labId, toUserId) =>
     apiFetch(`/api/hod/labs/${labId}/assign-to?toUserId=${encodeURIComponent(toUserId)}`, {
       method: "POST",
