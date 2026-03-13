@@ -54,6 +54,33 @@ function reqSemanticLabel(s) {
   return "Approved"
 }
 
+/* Derive accurate overall status from item-level statuses for multi-item requests */
+function deriveOverallStatus(r) {
+  const items = Array.isArray(r?.items) ? r.items : []
+  if (!items.length) return r.status
+  const statuses = items.map(it => String(it.itemStatus || "").toUpperCase())
+  if (statuses.every(s => s === "RETURN_VERIFIED" || s === "DAMAGED_REPORTED"))
+    return "RETURNED_VERIFIED"
+  if (statuses.some(s => s === "RETURN_REQUESTED" || s === "RETURN_VERIFIED"))
+    return "RETURNED_PENDING_TO_VERIFY"
+  if (statuses.some(s => s === "ISSUED_PENDING_REQUESTER_ACCEPT"))
+    return "ISSUED_PENDING_STUDENT_ACCEPT"
+  return r.status
+}
+
+/* True if ALL items in the request are fully returned/verified */
+function isFullyCompleted(r) {
+  const items = Array.isArray(r?.items) ? r.items : []
+  if (!items.length) {
+    const u = String(r.status || "").toUpperCase()
+    return u === "RETURNED_VERIFIED" || u === "DAMAGED_REPORTED"
+  }
+  return items.every(it => {
+    const s = String(it.itemStatus || "").toUpperCase()
+    return s === "RETURN_VERIFIED" || s === "DAMAGED_REPORTED"
+  })
+}
+
 const PIE_COLORS = ["#d97706", "#16a34a", "#dc2626", "#0d9488", "#7c3aed", "#0891b2"]
 
 /* Items summary text for a request */
@@ -94,22 +121,22 @@ export default function InstructorDashboard() {
 
   /* ── Counts ── */
   const counts = useMemo(() => {
-    const total     = rows.length
-    const pending   = rows.filter(r => String(r.status || "").toUpperCase() === "PENDING_LECTURER_APPROVAL").length
-    const active    = rows.filter(r => {
+    const total      = rows.length
+    const pending    = rows.filter(r => String(r.status || "").toUpperCase() === "PENDING_LECTURER_APPROVAL").length
+    const rejected   = rows.filter(r => String(r.status || "").toUpperCase() === "REJECTED_BY_LECTURER").length
+    const active     = rows.filter(r => {
       const s = String(r.status || "").toUpperCase()
-      return s !== "PENDING_LECTURER_APPROVAL" && s !== "REJECTED_BY_LECTURER" &&
-             s !== "RETURNED_VERIFIED" && s !== "DAMAGED_REPORTED"
+      return s !== "PENDING_LECTURER_APPROVAL" && s !== "REJECTED_BY_LECTURER" && !isFullyCompleted(r)
     }).length
     const needAction = rows.filter(r => {
       const s = String(r.status || "").toUpperCase()
-      return s === "ISSUED_PENDING_STUDENT_ACCEPT"
+      if (s === "ISSUED_PENDING_STUDENT_ACCEPT") return true
+      return Array.isArray(r.items) && r.items.some(
+        it => String(it.itemStatus || "").toUpperCase() === "ISSUED_PENDING_REQUESTER_ACCEPT"
+      )
     }).length
-    const completed = rows.filter(r => {
-      const s = String(r.status || "").toUpperCase()
-      return s === "RETURNED_VERIFIED" || s === "DAMAGED_REPORTED"
-    }).length
-    return { total, pending, active, needAction, completed }
+    const completed  = rows.filter(isFullyCompleted).length
+    return { total, pending, rejected, active, needAction, completed }
   }, [rows])
 
   /* ── Pie: status distribution ── */
@@ -198,10 +225,15 @@ export default function InstructorDashboard() {
               <div className="inst-stat-value">{loading ? "—" : counts.needAction}</div>
               <div className="inst-stat-sub">Accept issuance</div>
             </div>
+            <div className="inst-stat-card red">
+              <div className="inst-stat-label">Rejected</div>
+              <div className="inst-stat-value">{loading ? "—" : counts.rejected}</div>
+              <div className="inst-stat-sub">Declined by lecturer</div>
+            </div>
             <div className="inst-stat-card slate">
               <div className="inst-stat-label">Completed</div>
               <div className="inst-stat-value">{loading ? "—" : counts.completed}</div>
-              <div className="inst-stat-sub">Returned / closed</div>
+              <div className="inst-stat-sub">All items returned</div>
             </div>
           </div>
 
@@ -315,8 +347,8 @@ export default function InstructorDashboard() {
                       <td className="inst-muted">{r.fromDate || "—"}</td>
                       <td className="inst-muted">{r.toDate || "—"}</td>
                       <td>
-                        <span className={itemSpClass(r.status)}>
-                          {reqStatusLabel(r.status)}
+                        <span className={itemSpClass(deriveOverallStatus(r))}>
+                          {reqStatusLabel(deriveOverallStatus(r))}
                         </span>
                       </td>
                     </tr>
