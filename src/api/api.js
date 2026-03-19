@@ -38,11 +38,19 @@ export const AuthAPI = {
     apiFetch("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
 
   // Backend expects: fullName, email, regNo, department, password
-  // Email must match regNo: 2022/E/063 → 2022e063@eng.jfn.ac.lk
+  // Step 1: validates details, sends OTP to email — does NOT save user yet
   signupStudent: ({ fullName, email, regNo, department, password }) =>
     apiFetch("/api/auth/signup", {
       method: "POST",
       body: JSON.stringify({ fullName, email, regNo, department, password }),
+    }),
+
+  // Step 2: verifies OTP → creates user in DB
+  // POST /api/auth/signup-verify  { email, otp }
+  signupVerify: ({ email, otp }) =>
+    apiFetch("/api/auth/signup-verify", {
+      method: "POST",
+      body: JSON.stringify({ email, otp }),
     }),
 
   // Step 1 — POST /api/auth/forgot-password  { email }

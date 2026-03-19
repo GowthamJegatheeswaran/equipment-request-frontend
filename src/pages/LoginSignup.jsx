@@ -59,6 +59,8 @@ export default function LoginSignup() {
   const [signupError,   setSignupError]   = useState("")
   const [signupSuccess, setSignupSuccess] = useState("")
   const [signupEmail,   setSignupEmail]   = useState("")
+  const [signupOtp,     setSignupOtp]     = useState("")
+  const [signupStep,    setSignupStep]    = useState("form")  // "form" | "otp" | "done"
   const [signupLoading, setSignupLoading] = useState(false)
 
   const strongPat      = useMemo(() => /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}/, [])
@@ -108,12 +110,44 @@ export default function LoginSignup() {
     try {
       setSignupLoading(true)
       await AuthAPI.signupStudent({ fullName, email, regNo, department, password })
-      setFullName(""); setRegNo(""); setDepartment("")
-      setEmail(""); setPassword(""); setConfirm("")
       setSignupEmail(email)
-      setSignupSuccess("Account created! Check your university email for the verification link.")
+      setSignupOtp("")
+      setSignupStep("otp")
     } catch (err) {
       setSignupError(err?.message || "Signup failed. Please check your details.")
+    } finally {
+      setSignupLoading(false)
+    }
+  }
+
+  const handleSignupOtpVerify = async () => {
+    setSignupError("")
+    const code = signupOtp.trim()
+    if (!code || !/^\d{6}$/.test(code)) {
+      setSignupError("Please enter the 6-digit OTP"); return
+    }
+    try {
+      setSignupLoading(true)
+      await AuthAPI.signupVerify({ email: signupEmail, otp: code })
+      setFullName(""); setRegNo(""); setDepartment("")
+      setEmail(""); setPassword(""); setConfirm("")
+      setSignupStep("done")
+      setSignupSuccess("Registration complete! You can now log in.")
+    } catch (err) {
+      setSignupError(err?.message || "Invalid OTP. Please try again.")
+    } finally {
+      setSignupLoading(false)
+    }
+  }
+
+  const handleSignupResendOtp = async () => {
+    setSignupError("")
+    try {
+      setSignupLoading(true)
+      await AuthAPI.signupStudent({ fullName, email: signupEmail, regNo, department, password })
+      setSignupOtp("")
+    } catch (err) {
+      setSignupError("Could not resend OTP. Please try again.")
     } finally {
       setSignupLoading(false)
     }
@@ -248,38 +282,68 @@ export default function LoginSignup() {
 
           {/* ── REGISTER ── */}
           {tab === "register" && (
-            <form className="lp-form" onSubmit={handleSignup} noValidate>
+            <form className="lp-form" onSubmit={signupStep === "otp" ? (e) => { e.preventDefault(); handleSignupOtpVerify() } : handleSignup} noValidate>
               <div className="lp-form-head">
-                <div className="lp-form-title">Create your account</div>
-                <div className="lp-form-sub">Student registration · university email required</div>
+                <div className="lp-form-title">
+                  {signupStep === "otp" ? "Verify Your Email" : signupStep === "done" ? "Registration Complete" : "Create your account"}
+                </div>
+                <div className="lp-form-sub">
+                  {signupStep === "otp" ? `Enter the 6-digit OTP sent to ${signupEmail}` : signupStep === "done" ? "You can now sign in" : "Student registration · university email required"}
+                </div>
               </div>
 
-              {signupSuccess && (
-                <div className="lp-alert lp-alert-ok" style={{ flexDirection: "column", alignItems: "flex-start", gap: 8 }}>
-                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                    {signupSuccess}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      try {
-                        await AuthAPI.resendVerification(signupEmail)
-                        alert("Verification email resent! Check your inbox.")
-                      } catch (e) {
-                        alert(e?.message || "Could not resend. Try again.")
-                      }
-                    }}
-                    style={{
-                      background: "none", border: "none", cursor: "pointer",
-                      color: "#15803d", fontSize: 12, textDecoration: "underline",
-                      padding: 0, fontWeight: 600
-                    }}
-                  >
-                    Didn't get the email? Resend verification link
-                  </button>
+              {signupStep === "done" && (
+                <div className="lp-alert lp-alert-ok">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  {signupSuccess}
                 </div>
               )}
+
+              {signupStep === "otp" && (
+                <>
+                  <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 10, padding: "12px 14px", fontSize: 13, color: "#1e40af", marginBottom: 16, lineHeight: 1.5 }}>
+                    📨 A 6-digit OTP was sent to <strong>{signupEmail}</strong>.<br />
+                    Check your inbox and spam. Valid for <strong>10 minutes</strong>.
+                  </div>
+                  <div className="lp-fld">
+                    <label className="lp-lbl">6-Digit OTP</label>
+                    <input
+                      className="lp-inp"
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
+                      value={signupOtp}
+                      onChange={e => setSignupOtp(e.target.value.replace(/\D/g, ""))}
+                      placeholder="Enter OTP"
+                      disabled={signupLoading}
+                      autoFocus
+                      style={{ letterSpacing: "0.4em", fontSize: 22, fontWeight: 700, textAlign: "center" }}
+                    />
+                  </div>
+                  {signupError && (
+                    <div className="lp-alert lp-alert-err">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                      {signupError}
+                    </div>
+                  )}
+                  <button type="submit" className="lp-btn" disabled={signupLoading || signupOtp.length !== 6}>
+                    {signupLoading && <span className="lp-spin" />}
+                    {signupLoading ? "Verifying…" : "Verify & Complete Registration"}
+                  </button>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 12 }}>
+                    <button type="button" style={{ background: "none", border: "none", cursor: "pointer", color: "#2563eb", fontSize: 12, fontWeight: 600, textDecoration: "underline", padding: 0 }}
+                      onClick={() => { setSignupStep("form"); setSignupOtp(""); setSignupError("") }}>
+                      ← Back to form
+                    </button>
+                    <button type="button" style={{ background: "none", border: "none", cursor: "pointer", color: "#6b7280", fontSize: 12, fontWeight: 600, textDecoration: "underline", padding: 0 }}
+                      disabled={signupLoading} onClick={handleSignupResendOtp}>
+                      Resend OTP
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {signupStep === "form" && <>
 
               <div className="lp-row2">
                 <div className="lp-fld" style={{ marginBottom: 0 }}>
@@ -358,8 +422,9 @@ export default function LoginSignup() {
 
               <button type="submit" className="lp-btn" disabled={signupLoading || isWeak || isMismatch}>
                 {signupLoading && <span className="lp-spin" />}
-                {signupLoading ? "Creating account…" : "Create Account"}
+                {signupLoading ? "Sending OTP…" : "Send OTP →"}
               </button>
+              </>}
             </form>
           )}
 
