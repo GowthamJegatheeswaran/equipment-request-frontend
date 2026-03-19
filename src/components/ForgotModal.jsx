@@ -376,12 +376,21 @@ export default function ForgotModal({ onClose }) {
     }
   }
 
-  const handleVerifyOtp = () => {
+  const handleVerifyOtp = async () => {
     setError("")
     const code = otp.trim()
     if (!code)                  { setError("Please enter the OTP"); return }
     if (!/^\d{6}$/.test(code)) { setError("OTP must be exactly 6 digits"); return }
-    setStep(3)
+    try {
+      setLoading(true)
+      await AuthAPI.verifyOtp(email.trim(), code)
+      // OTP is correct — proceed to password step
+      setStep(3)
+    } catch (err) {
+      setError(err?.message || "Invalid OTP. Please check the code and try again.")
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleReset = async () => {

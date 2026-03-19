@@ -50,6 +50,11 @@ export const AuthAPI = {
   forgotPassword: (email) =>
     apiFetch("/api/auth/forgot-password", { method: "POST", body: JSON.stringify({ email }) }),
 
+  // Step 1.5 — POST /api/auth/verify-otp  { email, otp }
+  //             Validates OTP is correct before showing the new-password form
+  verifyOtp: (email, otp) =>
+    apiFetch("/api/auth/verify-otp", { method: "POST", body: JSON.stringify({ email, otp }) }),
+
   // Step 2 — POST /api/auth/reset-password  { email, otp, newPassword }
   //           CHANGED: was { token, newPassword } — now OTP based
   resetPassword: ({ email, otp, newPassword }) =>
