@@ -1,7 +1,3 @@
-// ERMS API — Spring Boot backend (JWT auth)
-// Dev: Vite proxy in vite.config.js forwards /api → http://localhost:8080
-// Prod: Set VITE_API_BASE_URL="https://your-domain.com"
-
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "")
 
 export function getAuthToken() {
@@ -49,13 +45,17 @@ export const AuthAPI = {
       body: JSON.stringify({ fullName, email, regNo, department, password }),
     }),
 
+  // Step 1 — POST /api/auth/forgot-password  { email }
+  //           Backend sends 6-digit OTP to that email
   forgotPassword: (email) =>
     apiFetch("/api/auth/forgot-password", { method: "POST", body: JSON.stringify({ email }) }),
 
-  resetPassword: ({ token, newPassword }) =>
+  // Step 2 — POST /api/auth/reset-password  { email, otp, newPassword }
+  //           CHANGED: was { token, newPassword } — now OTP based
+  resetPassword: ({ email, otp, newPassword }) =>
     apiFetch("/api/auth/reset-password", {
       method: "POST",
-      body: JSON.stringify({ token, newPassword }),
+      body: JSON.stringify({ email, otp, newPassword }),
     }),
 
   // Returns: { id, fullName, email, regNo, department, role, enabled }
@@ -66,11 +66,6 @@ export const AuthAPI = {
       method: "POST",
       body: JSON.stringify({ currentPassword, newPassword }),
     }),
-  // NOTE: /api/auth/change-password does NOT exist in the backend.
-  // To change password, the user must use forgotPassword (email reset flow).
-  // If you want in-app change-password, add a backend endpoint first:
-  //   POST /api/auth/change-password  { currentPassword, newPassword }
-  // changePassword: ({ currentPassword, newPassword }) => apiFetch(...)  ← ADD TO BACKEND FIRST
 }
 
 // ── Notifications ─────────────────────────────────────────────────────────────
@@ -82,12 +77,10 @@ export const NotificationAPI = {
 
 // ── Common lookups ────────────────────────────────────────────────────────────
 export const CommonAPI = {
-  // Returns: UserPublicDTO[] { id, email, fullName, role, department }
-  // Includes LECTURER and HOD roles for the given department
+
   lecturers: (department) =>
     apiFetch(`/api/common/lecturers?department=${encodeURIComponent(department || "")}`),
 
-  // Returns: LabDTO[] { id, name, department, technicalOfficerId }
   labs: async (department) => {
     try {
       const qs = department ? `?department=${encodeURIComponent(department)}` : ""
@@ -109,7 +102,7 @@ export const CommonAPI = {
   },
 }
 
-// ── Requests (Student / Staff) ────────────────────────────────────────────────
+
 // Roles allowed: STUDENT, STAFF (and LECTURER/HOD for their own requests via same endpoint)
 export const StudentRequestAPI = {
   // POST /api/student/requests
@@ -135,7 +128,6 @@ export const StudentRequestAPI = {
     apiFetch(`/api/student/request-items/${requestItemId}/return`, { method: "POST" }),
 }
 
-// ── Lecturer ──────────────────────────────────────────────────────────────────
 export const LecturerRequestAPI = {
   // GET /api/lecturer/approval-queue → RequestSummaryDTO[]
   queue: () => apiFetch("/api/lecturer/approval-queue"),
@@ -161,7 +153,6 @@ export const LecturerRequestAPI = {
       { method: "POST" }
     ),
 
-  // GET /api/lecturer/my-requests → StudentMyRequestDTO[]
   // Returns lecturer's OWN requests (lecturer can also request equipment)
   my: () => apiFetch("/api/lecturer/my-requests"),
 }
@@ -238,7 +229,6 @@ export const HodLabAPI = {
   labs: () => apiFetch("/api/hod/labs"),
 
   // GET /api/hod/labs/department-tos → SimpleUserDTO[]
-  // HOD-secured endpoint — returns all TOs in the HOD's dept, no emailVerified filter.
   deptTOs: () => apiFetch("/api/hod/labs/department-tos"),
 
   // POST /api/hod/labs/{labId}/assign-to?toUserId=X
@@ -294,7 +284,7 @@ export const AdminPurchaseAPI = {
   historyByDept: (dept) =>
     apiFetch(`/api/admin/departments/${encodeURIComponent(dept)}/purchase-history`),
 
-  // POST /api/admin/departments/{dept}/purchase-requests/{id}/approve?issuedDate=YYYY-MM-DD&comment=...
+  // POST /api/admin/departments/{dept}/purchase-requests/{id}/approve?issuedDate=YYYY-MM-DD
   approve: ({ dept, id, issuedDate, comment }) => {
     if (!issuedDate) throw new Error("issuedDate is required")
     const qs = new URLSearchParams()
