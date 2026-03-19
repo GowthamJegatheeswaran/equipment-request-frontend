@@ -109,6 +109,7 @@ export default function LoginSignup() {
       await AuthAPI.signupStudent({ fullName, email, regNo, department, password })
       setFullName(""); setRegNo(""); setDepartment("")
       setEmail(""); setPassword(""); setConfirm("")
+      setSignupEmail(email)
       setSignupSuccess("Account created! Check your university email for the verification link.")
     } catch (err) {
       setSignupError(err?.message || "Signup failed. Please check your details.")
@@ -253,9 +254,29 @@ export default function LoginSignup() {
               </div>
 
               {signupSuccess && (
-                <div className="lp-alert lp-alert-ok">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                  {signupSuccess}
+                <div className="lp-alert lp-alert-ok" style={{ flexDirection: "column", alignItems: "flex-start", gap: 8 }}>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    {signupSuccess}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        await AuthAPI.resendVerification(signupEmail)
+                        alert("Verification email resent! Check your inbox.")
+                      } catch (e) {
+                        alert(e?.message || "Could not resend. Try again.")
+                      }
+                    }}
+                    style={{
+                      background: "none", border: "none", cursor: "pointer",
+                      color: "#15803d", fontSize: 12, textDecoration: "underline",
+                      padding: 0, fontWeight: 600
+                    }}
+                  >
+                    Didn't get the email? Resend verification link
+                  </button>
                 </div>
               )}
 

@@ -66,6 +66,14 @@ export const AuthAPI = {
       method: "POST",
       body: JSON.stringify({ currentPassword, newPassword }),
     }),
+
+  // POST /api/auth/resend-verification  { email }
+  //      Resends the email verification link to a registered but unverified student
+  resendVerification: (email) =>
+    apiFetch("/api/auth/resend-verification", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
 }
 
 // ── Notifications ─────────────────────────────────────────────────────────────
